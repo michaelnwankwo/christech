@@ -3,20 +3,19 @@
 // src/components/layout/MobileNav.tsx
 // ≤768px header entry point: a 44px hamburger that opens a full-width
 // slide-down panel carrying everything the desktop row hides (Shop/Services
-// links, mode switch, currency, cart, user menu). Closes on navigation and
-// on Escape; the panel is `hidden` when closed so its links leave the tab
-// order (no invisible-focus traps).
+// links, mode switch, currency, user menu). The cart moved to the mobile
+// top bar (SiteHeader's .site-header__mobile-actions). Closes on navigation
+// and on Escape; the panel is `hidden` when closed so its links leave the
+// tab order (no invisible-focus traps).
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AppModeSwitch } from "./AppModeSwitch";
 import { CurrencyPicker } from "./CurrencyPicker";
-import { CartTrigger } from "./CartTrigger";
 import { UserMenu } from "./UserMenu";
-import type { AppMode } from "@/stores/cart-store";
 
-export function MobileNav({ mode }: { mode: AppMode }) {
+export function MobileNav() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
 
@@ -55,7 +54,6 @@ export function MobileNav({ mode }: { mode: AppMode }) {
         <Link href="/services">Services</Link>
         <AppModeSwitch />
         <CurrencyPicker />
-        {mode === "storefront" ? <CartTrigger /> : null}
         <UserMenu />
       </nav>
     </div>

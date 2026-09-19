@@ -131,7 +131,7 @@ export function CatalogAndUsageFilters(props: {
             defaultValue={maxNgn ? String(Number(maxNgn) / 100) : ""}
           />
         </div>
-        <button type="submit" className="btn btn--sm" style={{ alignSelf: "end" }}>
+        <button type="submit" className="btn btn--sm">
           Apply
         </button>
       </form>

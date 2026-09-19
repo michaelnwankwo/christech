@@ -9,7 +9,7 @@ import { useEffect, useState } from "react";
 import { useCartStore } from "@/stores/cart-store";
 import { useStorefrontStore } from "@/stores/storefront-store";
 
-export function CartTrigger() {
+export function CartTrigger({ compact = false }: { compact?: boolean }) {
   const lines = useCartStore((s) => s.lines);
   const toggleCart = useStorefrontStore((s) => s.toggleCart);
   const [mounted, setMounted] = useState(false);
@@ -23,13 +23,13 @@ export function CartTrigger() {
   return (
     <button
       type="button"
-      className="btn btn--secondary btn--sm"
+      className={compact ? "icon-btn cart-trigger" : "btn btn--secondary btn--sm cart-trigger"}
       onClick={toggleCart}
       aria-label={`Open cart — ${count} item${count === 1 ? "" : "s"}`}
       style={{ position: "relative" }}
     >
       <span aria-hidden="true">🛒</span>
-      <span>Cart</span>
+      {compact ? null : <span>Cart</span>}
       {count > 0 ? (
         <span className="cart-badge-count" aria-hidden="true">
           {count}

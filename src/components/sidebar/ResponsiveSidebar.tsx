@@ -37,6 +37,11 @@ export function ResponsiveSidebar(props: {
     activity: false,
   });
 
+  // Whole-panel mobile disclosure ("Filter Options ▼/▲"). Default closed on
+  // mobile only — on desktop the CSS keeps the body visible regardless of
+  // this state and hides the toggle (md:block equivalent).
+  const [filtersOpen, setFiltersOpen] = useState(false);
+
   function toggleSection(section: SidebarSection) {
     setOpenSections((current) => ({
       ...current,
@@ -46,36 +51,55 @@ export function ResponsiveSidebar(props: {
 
   return (
     <aside className="sidebar surface-card sidebar__panel" aria-label="Store filters and account activity">
-      <SidebarSection
-        id="catalog"
-        title="Categories & Product Usage"
-        open={openSections.catalog}
-        onToggle={() => toggleSection("catalog")}
+      <div
+        className="filter-disclosure"
+        data-open={filtersOpen ? "true" : "false"}
       >
-        <CatalogAndUsageFilters
-          categories={props.categories}
-          usageTags={props.usageTags}
-        />
-      </SidebarSection>
+        <button
+          type="button"
+          className="filter-disclosure__toggle"
+          aria-expanded={filtersOpen}
+          aria-controls="filter-disclosure-body"
+          onClick={() => setFiltersOpen((current) => !current)}
+        >
+          <span>Filter Options</span>
+          <span aria-hidden="true" className="sidebar__glyph">
+            {filtersOpen ? "▲" : "▼"}
+          </span>
+        </button>
+        <div className="filter-disclosure__body" id="filter-disclosure-body">
+        <SidebarSection
+          id="catalog"
+          title="Categories & Product Usage"
+          open={openSections.catalog}
+          onToggle={() => toggleSection("catalog")}
+        >
+          <CatalogAndUsageFilters
+            categories={props.categories}
+            usageTags={props.usageTags}
+          />
+        </SidebarSection>
 
-      <SidebarSection
-        id="brands"
-        title="Supported Brands"
-        open={openSections.brands}
-        onToggle={() => toggleSection("brands")}
-      >
-        <BrandFilters brands={BRANDS} />
-      </SidebarSection>
+        <SidebarSection
+          id="brands"
+          title="Supported Brands"
+          open={openSections.brands}
+          onToggle={() => toggleSection("brands")}
+        >
+          <BrandFilters brands={BRANDS} />
+        </SidebarSection>
 
-      <SidebarSection
-        id="activity"
-        title="Live Order Tracking & Recent Transactions"
-        open={openSections.activity}
-        onToggle={() => toggleSection("activity")}
-      >
-        <LiveOrderTracking />
-        <RecentTransactions />
-      </SidebarSection>
+        <SidebarSection
+          id="activity"
+          title="Live Order Tracking & Recent Transactions"
+          open={openSections.activity}
+          onToggle={() => toggleSection("activity")}
+        >
+            <LiveOrderTracking />
+            <RecentTransactions />
+          </SidebarSection>
+        </div>
+      </div>
     </aside>
   );
 }

@@ -96,6 +96,9 @@ a:hover { text-decoration: underline; }
 .site-header__desktop { display: flex; align-items: center; gap: 1rem; }
 .site-header__modeswitch { display: inline-flex; }
 .mobile-nav-host { display: none; }
+/* Mobile top-bar cart (Option A): only the ≤768px cluster shows it. */
+.site-header__mobile-actions { display: none; align-items: center; gap: .4rem; }
+.site-header__mobile-actions .cart-badge-count { top: -4px; right: -4px; }
 .brand-logo { display: inline-flex; align-items: center; gap: .5rem; color: var(--color-text); }
 .brand-logo:hover { text-decoration: none; }
 .brand-logo img { height: 38px; width: auto; display: block; }
@@ -186,9 +189,33 @@ a:hover { text-decoration: underline; }
 .sidebar__filters { display: flex; flex-direction: column; gap: .45rem; padding: .1rem .25rem .6rem; }
 .sidebar__filters label { display: flex; gap: .5rem; align-items: center; font-size: .86rem; cursor: pointer; }
 .sidebar__filters .filter-group__title { font-size: .74rem; text-transform: uppercase; letter-spacing: .08em; color: var(--text-muted); font-weight: 700; margin-top: .4rem; }
-.sidebar__price-row { display: flex; gap: .4rem; }
-.sidebar__price-row .field { flex: 1; }
+/* Min/Max in a constrained 2-col grid; Apply spans the full row. minmax(0,1fr)
+   + width:100% keep the number inputs from growing past the sidebar column. */
+.sidebar__price-row {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .5rem; width: 100%;
+}
+.sidebar__price-row .field { min-width: 0; }
+.sidebar__price-row .field input { width: 100%; }
+.sidebar__price-row .btn { grid-column: 1 / -1; justify-content: center; }
 .sidebar__actions { display: flex; justify-content: space-between; margin-top: .35rem; }
+
+/* Whole-panel "Filter Options" disclosure for the stacked sidebar. Desktop:
+   toggle hidden, body always visible (md:block equivalent). ≤920px (the
+   breakpoint where the sidebar stacks above the grid): toggle is a 44px
+   button and the body collapses behind it. */
+.filter-disclosure__toggle { display: none; }
+@media (max-width: 920px) {
+  .filter-disclosure__toggle {
+    display: flex; width: 100%; min-height: 44px;
+    align-items: center; justify-content: space-between;
+    background: none; border: 0; cursor: pointer;
+    padding: .75rem .25rem; font: inherit; font-weight: 700;
+    color: var(--color-text);
+  }
+  .filter-disclosure__body { display: none; }
+  .filter-disclosure[data-open="true"] .filter-disclosure__body { display: block; }
+}
 
 /* ── Product grid / cards ───────────────────────────────────────────────── */
 .page-main { min-width: 0; display: flex; flex-direction: column; gap: 1rem; }
@@ -205,13 +232,21 @@ a:hover { text-decoration: underline; }
 .hero__copy { flex: 1 1 340px; }
 .hero__copy h1 { margin: 0 0 .35rem; font-size: clamp(1.5rem, 3.4vw, 2.2rem); }
 .hero__copy p { margin: 0 0 1rem; color: var(--text-muted); max-width: 46ch; }
-.hero__badge-row { display: flex; gap: .5rem; flex-wrap: wrap; }
 
+/* Explicit responsive tiers (2 on phones, 3 from 640px, 4 from 1024px).
+   minmax(0,…) keeps long product names inside their cell — no row-wide
+   overflow — where the old auto-fill/230px could not go below one column. */
 .product-grid {
   display: grid; gap: 1rem;
-  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
-.product-card { display: flex; flex-direction: column; overflow: hidden; }
+@media (min-width: 640px) {
+  .product-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (min-width: 1024px) {
+  .product-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+.product-card { display: flex; flex-direction: column; overflow: hidden; position: relative; }
 .product-card__thumb {
   aspect-ratio: 4 / 3; width: 100%; object-fit: contain;
   background: var(--color-app-bg); border-bottom: 1px solid var(--border-subtle);
@@ -222,6 +257,37 @@ a:hover { text-decoration: underline; }
 .product-card__meta { display: flex; flex-wrap: wrap; gap: .35rem; }
 .product-card__price { font-size: 1.02rem; font-weight: 800; }
 .product-card__foot { margin-top: auto; display: flex; justify-content: space-between; align-items: center; gap: .5rem; }
+
+/* 2-up narrow cards: tighter type + stacked foot so nothing overlaps. */
+@media (max-width: 639px) {
+  .product-grid { gap: .6rem; }
+  .product-card__body { padding: .55rem; gap: .3rem; }
+  .product-card__name { font-size: .78rem; line-height: 1.3; }
+  .product-card__meta { gap: .25rem; }
+  .product-card__meta .chip { font-size: .64rem; padding: .1rem .35rem; }
+  .product-card__price { font-size: .82rem; }
+  .product-card__foot { flex-direction: column; align-items: stretch; gap: .35rem; }
+  .product-card__foot .btn--sm { min-height: 40px; font-size: .74rem; padding: .35rem .5rem; }
+}
+
+/* Add-to-cart feedback. On grid cards (.atc--floating) it is an overlay
+   pinned to the card bottom — position:absolute against the relative
+   .product-card — so toggling it never changes card height. On the detail
+   page it stays in normal flow beneath the button. pointer-events:none so
+   the overlay can never block the card's controls. */
+.atc__feedback { display: block; font-size: .8rem; color: var(--text-muted); }
+.atc--floating .atc__feedback {
+  position: absolute; left: .5rem; right: .5rem; bottom: .5rem; z-index: 10;
+  margin: 0; padding: .4rem .6rem; text-align: center;
+  font-size: .76rem; color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--border-subtle); border-radius: .55rem;
+  box-shadow: var(--shadow-card);
+  pointer-events: none;
+}
+@media (max-width: 639px) {
+  .atc--floating .atc__feedback { left: .35rem; right: .35rem; bottom: .35rem; font-size: .68rem; padding: .3rem .4rem; }
+}
 
 .pagination { display: flex; gap: .5rem; justify-content: center; align-items: center; padding: .5rem 0 1rem; }
 
@@ -431,6 +497,7 @@ a:hover { text-decoration: underline; }
 /* ── Mobile (≤768px): stack, bottom-sheet, 44px targets, no overflow ──── */
 @media (max-width: 768px) {
   .site-header__desktop, .site-header__modeswitch { display: none; }
+  .site-header__mobile-actions { display: flex; }
   .mobile-nav-host { display: block; }
   .site-header__inner { gap: .5rem; padding: 0 .75rem; }
   .brand-logo img { height: 30px; }

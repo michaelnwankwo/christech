@@ -28,11 +28,6 @@ export default async function StorefrontHome() {
               Book an engineer
             </Link>
           </div>
-          <div className="hero__badge-row" style={{ marginTop: ".9rem" }}>
-            <span className="chip">NGN base · USD/GBP/EUR display</span>
-            <span className="paystack-badge">Secure Paystack checkout</span>
-            <span className="chip chip--success">Realtime order tracking</span>
-          </div>
         </div>
         <div style={{ flex: "0 1 340px" }}>
           <Image
@@ -47,9 +42,6 @@ export default async function StorefrontHome() {
         </div>
       </section>
 
-      <h2 className="page-title" style={{ marginTop: ".5rem" }}>
-        Featured equipment
-      </h2>
       <ProductGrid cards={featured?.cards ?? []} />
     </>
   );

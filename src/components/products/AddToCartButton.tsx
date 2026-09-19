@@ -9,7 +9,7 @@
 // rebuilds everything from productId/serviceId/quantity — the client id only
 // wires parents to children (§17.1).
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useCartStore, type CartLine } from "@/stores/cart-store";
 import { useStorefrontStore } from "@/stores/storefront-store";
 
@@ -47,6 +47,15 @@ export function AddToCartButton(props: {
 
   const [selectedAddons, setSelectedAddons] = useState<Set<string>>(new Set());
   const [feedback, setFeedback] = useState<string | null>(null);
+
+  // On grid cards the feedback renders as an absolutely positioned overlay
+  // (.atc--floating) so it never changes card height; it self-dismisses so
+  // the overlay does not sit on the card forever.
+  useEffect(() => {
+    if (!feedback) return;
+    const timer = setTimeout(() => setFeedback(null), 2500);
+    return () => clearTimeout(timer);
+  }, [feedback]);
 
   const toggleAddon = useCallback((id: string) => {
     setSelectedAddons((current) => {
@@ -107,7 +116,12 @@ export function AddToCartButton(props: {
   }
 
   return (
-    <span className="stack" style={{ gap: ".45rem", width: "100%" }}>
+    <span
+      className={
+        props.withAddonPicker ? "stack atc" : "stack atc atc--floating"
+      }
+      style={{ gap: ".45rem", width: "100%" }}
+    >
       {props.withAddonPicker && props.addons && props.addons.length > 0 ? (
         <fieldset className="addon-list" style={{ border: 0, margin: 0, padding: 0 }}>
           <legend className="muted" style={{ fontSize: ".8rem", fontWeight: 600 }}>
@@ -137,21 +151,19 @@ export function AddToCartButton(props: {
         </fieldset>
       ) : null}
 
-      <span className="row" style={{ justifyContent: "space-between", gap: ".5rem" }}>
-        <button
-          type="button"
-          className="btn btn--sm"
-          disabled={props.product.disabled}
-          onClick={() => addToCart(1)}
-        >
-          {props.product.disabled ? "Out of stock" : "Add to cart"}
-        </button>
-        {feedback ? (
-          <span role="status" className="muted" style={{ fontSize: ".8rem" }}>
-            {feedback}
-          </span>
-        ) : null}
-      </span>
+      <button
+        type="button"
+        className="btn btn--sm"
+        disabled={props.product.disabled}
+        onClick={() => addToCart(1)}
+      >
+        {props.product.disabled ? "Out of stock" : "Add to cart"}
+      </button>
+      {feedback ? (
+        <span role="status" className="atc__feedback">
+          {feedback}
+        </span>
+      ) : null}
     </span>
   );
 }

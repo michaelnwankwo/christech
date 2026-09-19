@@ -8,8 +8,12 @@
 // Responsive contract: the desktop cluster collapses into MobileNav's
 // slide-down panel below 768px (see globals.css + MobileNav.tsx). Every
 // touch target in the mobile panel is ≥44px.
+// Mobile header (Option A — sticky top bar): brand left; cart (with absolute
+// count badge) + drawer toggle right. The sticky/styling contract itself is
+// on .site-header in globals.css. Desktop nav links were removed as
+// redundant: AppModeSwitch routes to /products and /services, the mobile
+// drawer carries the same links, and the cart lives in the mobile top bar.
 
-import Link from "next/link";
 import { BrandLogo } from "./BrandLogo";
 import { AppModeSwitch } from "./AppModeSwitch";
 import { CurrencyPicker } from "./CurrencyPicker";
@@ -28,15 +32,16 @@ export function SiteHeader({ mode }: { mode: AppMode }) {
         </span>
         <span className="site-header__spacer" />
         <div className="site-header__desktop">
-          <nav className="row" aria-label="Primary">
-            <Link href="/products">Shop</Link>
-            <Link href="/services">Services</Link>
-          </nav>
           <CurrencyPicker />
           {mode === "storefront" ? <CartTrigger /> : null}
           <UserMenu />
         </div>
-        <MobileNav mode={mode} />
+        {mode === "storefront" ? (
+          <span className="site-header__mobile-actions">
+            <CartTrigger compact />
+          </span>
+        ) : null}
+        <MobileNav />
       </div>
     </header>
   );
