@@ -31,7 +31,7 @@ export function ProductGrid({ cards }: { cards: ProductCard[] }) {
               <img
                 src={card.imageUrls[0]}
                 alt=""
-                style={{ width: "100%", height: "100%", objectFit: "contain" }}
+                className="product-card__img"
               />
             ) : (
               <span>{card.brand}</span>

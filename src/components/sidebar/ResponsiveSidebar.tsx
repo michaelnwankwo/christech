@@ -8,8 +8,16 @@
 //   * headings keep semantic structure while buttons carry state;
 //   * toggle state is per-section (independent open/close — REQUIRED),
 //     initialized per spec: catalog & brands open, activity collapsed.
+//
+// Mobile/stacked behavior (≤920px, Option B): the whole card is collapsed
+// behind the products-header "Filter 🎛️" pill — state lives in the
+// storefront store (§7.1 `sidebarOpen`), which that button owns. The former
+// full-width "Filter Options" text trigger is gone. Desktop keeps the
+// sidebar docked unconditionally; the store flag only matters ≤920px.
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { usePathname, useSearchParams, useRouter } from "next/navigation";
+import { useStorefrontStore } from "@/stores/storefront-store";
 import { CatalogAndUsageFilters } from "./CatalogAndUsageFilters";
 import { LiveOrderTracking, RecentTransactions } from "./OrderActivity";
 
@@ -37,10 +45,17 @@ export function ResponsiveSidebar(props: {
     activity: false,
   });
 
-  // Whole-panel mobile disclosure ("Filter Options ▼/▲"). Default closed on
-  // mobile only — on desktop the CSS keeps the body visible regardless of
-  // this state and hides the toggle (md:block equivalent).
-  const [filtersOpen, setFiltersOpen] = useState(false);
+  const sidebarOpen = useStorefrontStore((s) => s.sidebarOpen);
+  const setSidebarOpen = useStorefrontStore((s) => s.setSidebarOpen);
+  const pathname = usePathname();
+
+  // Collapse the stacked panel whenever the route changes (e.g. /products →
+  // /cart) so an opened filter card can never float onto unrelated pages.
+  // Query-param changes keep the same pathname, so applying a filter inside
+  // the panel leaves it open.
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [pathname, setSidebarOpen]);
 
   function toggleSection(section: SidebarSection) {
     setOpenSections((current) => ({
@@ -50,56 +65,42 @@ export function ResponsiveSidebar(props: {
   }
 
   return (
-    <aside className="sidebar surface-card sidebar__panel" aria-label="Store filters and account activity">
-      <div
-        className="filter-disclosure"
-        data-open={filtersOpen ? "true" : "false"}
+    <aside
+      className="sidebar surface-card sidebar__panel"
+      id="store-filters"
+      data-open={sidebarOpen ? "true" : "false"}
+      aria-label="Store filters and account activity"
+    >
+      <SidebarSection
+        id="catalog"
+        title="Categories & Product Usage"
+        open={openSections.catalog}
+        onToggle={() => toggleSection("catalog")}
       >
-        <button
-          type="button"
-          className="filter-disclosure__toggle"
-          aria-expanded={filtersOpen}
-          aria-controls="filter-disclosure-body"
-          onClick={() => setFiltersOpen((current) => !current)}
-        >
-          <span>Filter Options</span>
-          <span aria-hidden="true" className="sidebar__glyph">
-            {filtersOpen ? "▲" : "▼"}
-          </span>
-        </button>
-        <div className="filter-disclosure__body" id="filter-disclosure-body">
-        <SidebarSection
-          id="catalog"
-          title="Categories & Product Usage"
-          open={openSections.catalog}
-          onToggle={() => toggleSection("catalog")}
-        >
-          <CatalogAndUsageFilters
-            categories={props.categories}
-            usageTags={props.usageTags}
-          />
-        </SidebarSection>
+        <CatalogAndUsageFilters
+          categories={props.categories}
+          usageTags={props.usageTags}
+        />
+      </SidebarSection>
 
-        <SidebarSection
-          id="brands"
-          title="Supported Brands"
-          open={openSections.brands}
-          onToggle={() => toggleSection("brands")}
-        >
-          <BrandFilters brands={BRANDS} />
-        </SidebarSection>
+      <SidebarSection
+        id="brands"
+        title="Supported Brands"
+        open={openSections.brands}
+        onToggle={() => toggleSection("brands")}
+      >
+        <BrandFilters brands={BRANDS} />
+      </SidebarSection>
 
-        <SidebarSection
-          id="activity"
-          title="Live Order Tracking & Recent Transactions"
-          open={openSections.activity}
-          onToggle={() => toggleSection("activity")}
-        >
-            <LiveOrderTracking />
-            <RecentTransactions />
-          </SidebarSection>
-        </div>
-      </div>
+      <SidebarSection
+        id="activity"
+        title="Live Order Tracking & Recent Transactions"
+        open={openSections.activity}
+        onToggle={() => toggleSection("activity")}
+      >
+        <LiveOrderTracking />
+        <RecentTransactions />
+      </SidebarSection>
     </aside>
   );
 }
@@ -157,9 +158,6 @@ function BrandFilters({ brands }: { brands: readonly string[] }) {
     </div>
   );
 }
-
-import { usePathname, useSearchParams, useRouter } from "next/navigation";
-import { useCallback } from "react";
 
 function BrandCheckbox({ brand }: { brand: string }) {
   const router = useRouter();
