@@ -233,6 +233,15 @@ a:hover { text-decoration: underline; }
 .hero__copy h1 { margin: 0 0 .35rem; font-size: clamp(1.5rem, 3.4vw, 2.2rem); }
 .hero__copy p { margin: 0 0 1rem; color: var(--text-muted); max-width: 46ch; }
 
+/* <=639px: hide the CTA banner + oversized brand image (their routes remain
+   one tap away in the header drawer) and condense the hero so the catalog
+   starts without a scroll of dead space. */
+@media (max-width: 639px) {
+  .hero { padding: .9rem 1rem; gap: .6rem; margin-bottom: .15rem; }
+  .hero__cta, .hero__logo { display: none; }
+  .hero__copy p { margin-bottom: .15rem; font-size: .92rem; }
+}
+
 /* Explicit responsive tiers (2 on phones, 3 from 640px, 4 from 1024px).
    minmax(0,…) keeps long product names inside their cell — no row-wide
    overflow — where the old auto-fill/230px could not go below one column. */
@@ -253,7 +262,7 @@ a:hover { text-decoration: underline; }
   display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: .8rem;
 }
 .product-card__body { padding: .8rem; display: flex; flex-direction: column; gap: .45rem; flex: 1; }
-.product-card__name { font-weight: 700; font-size: .95rem; margin: 0; }
+.product-card__name { font-weight: 700; font-size: .95rem; margin: 0; overflow-wrap: break-word; min-width: 0; }
 .product-card__meta { display: flex; flex-wrap: wrap; gap: .35rem; }
 .product-card__price { font-size: 1.02rem; font-weight: 800; }
 .product-card__foot { margin-top: auto; display: flex; justify-content: space-between; align-items: center; gap: .5rem; }
@@ -472,6 +481,10 @@ a:hover { text-decoration: underline; }
   box-shadow: var(--shadow-card);
   padding: .85rem 1rem calc(.85rem + env(safe-area-inset-bottom));
 }
+/* Guard: the author `display:flex` above beats the UA `[hidden]` default, so
+   without this rule the drawer would be OPEN on first load at <=768px even
+   though MobileNav renders `hidden={!open}` with open=false. */
+.mobile-nav[hidden] { display: none; }
 .mobile-nav a {
   display: flex; align-items: center; min-height: 44px;
   color: var(--color-text); font-weight: 600; border-radius: .55rem;

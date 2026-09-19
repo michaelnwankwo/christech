@@ -20,7 +20,7 @@ export default async function StorefrontHome() {
             commissioning add-ons at checkout and full installation services
             you can book separately.
           </p>
-          <div className="row">
+          <div className="row hero__cta">
             <Link href="/products" className="btn">
               Shop the catalog
             </Link>
@@ -29,7 +29,7 @@ export default async function StorefrontHome() {
             </Link>
           </div>
         </div>
-        <div style={{ flex: "0 1 340px" }}>
+        <div className="hero__logo" style={{ flex: "0 1 340px" }}>
           <Image
             src="/brand/chrisviscus-logo.png"
             alt="Chrisviscus Technologies"
