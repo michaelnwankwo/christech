@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { ProductGrid } from "@/components/products/ProductGrid";
-import { FilterPill } from "@/components/products/FilterPill";
 import { listProductCards } from "@/lib/catalog/queries";
 
 export const dynamic = "force-dynamic";
@@ -36,33 +35,19 @@ export default async function ProductsPage({
   };
 
   const result = await listProductCards(parsedFilters).catch(() => null);
-  // Fixed precedence: the old `category ? 1 : 0 + …` expression only ever
-  // counted the category. Every filter group contributes its real share.
   const activeCount =
-    (parsedFilters.category ? 1 : 0) +
+    parsedFilters.category ? 1 : 0 +
     parsedFilters.brand.length +
-    parsedFilters.usage.length +
-    (parsedFilters.availableOnly ? 1 : 0) +
-    (parsedFilters.minNgnMinor !== undefined ||
-    parsedFilters.maxNgnMinor !== undefined
-      ? 1
-      : 0);
+    parsedFilters.usage.length;
 
   return (
     <>
-      <div className="products-header">
-        <h1 className="page-title">
-          Products
-          <span className="products-header__meta">
-            {result?.totalCount != null
-              ? ` · ${result.totalCount} item${result.totalCount === 1 ? "" : "s"}`
-              : ""}
-            {activeCount
-              ? ` · ${activeCount} filter${activeCount === 1 ? "" : "s"}`
-              : ""}
-          </span>
-        </h1>
-        <FilterPill activeCount={activeCount} />
+      <div className="row" style={{ justifyContent: "space-between" }}>
+        <h1 className="page-title">Products</h1>
+        <span className="muted" style={{ fontSize: ".85rem" }}>
+          {result?.totalCount != null ? `${result.totalCount} item(s)` : ""}
+          {activeCount ? ` · ${activeCount} filter(s) active` : ""}
+        </span>
       </div>
 
       <ProductGrid cards={result?.cards ?? []} />

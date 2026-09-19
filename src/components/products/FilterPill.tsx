@@ -13,26 +13,15 @@ export function FilterPill({ activeCount = 0 }: { activeCount?: number }) {
   const open = useStorefrontStore((s) => s.sidebarOpen);
   const setSidebarOpen = useStorefrontStore((s) => s.setSidebarOpen);
 
-  function toggle() {
-    const next = !open;
-    setSidebarOpen(next);
-    if (next && typeof document !== "undefined") {
-      // The panel expands above the grid; make sure it is actually in view.
-      requestAnimationFrame(() => {
-        document
-          .getElementById("store-filters")
-          ?.scrollIntoView({ behavior: "smooth", block: "start" });
-      });
-    }
-  }
-
+  // The sheet animates itself in (fixed overlay), so there is nothing to
+  // scroll into view here — the store flag IS the whole contract.
   return (
     <button
       type="button"
       className={`filter-pill${open ? " filter-pill--on" : ""}`}
       aria-expanded={open}
       aria-controls="store-filters"
-      onClick={toggle}
+      onClick={() => setSidebarOpen(!open)}
     >
       <span aria-hidden="true">🎛️</span>
       <span>Filter</span>

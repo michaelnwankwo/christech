@@ -200,40 +200,21 @@ a:hover { text-decoration: underline; }
 .sidebar__price-row .btn { grid-column: 1 / -1; justify-content: center; }
 .sidebar__actions { display: flex; justify-content: space-between; margin-top: .35rem; }
 
-/* Stacked zone (≤920px, Option B): the entire filter card is collapsed and
-   shown only while the products-header "Filter 🎛️" pill holds the store's
-   sidebarOpen flag — no floating empty shell, no standalone text trigger.
-   Above 920px the sidebar is docked unconditionally and the flag is inert. */
+/* Whole-panel "Filter Options" disclosure for the stacked sidebar. Desktop:
+   toggle hidden, body always visible (md:block equivalent). ≤920px (the
+   breakpoint where the sidebar stacks above the grid): toggle is a 44px
+   button and the body collapses behind it. */
+.filter-disclosure__toggle { display: none; }
 @media (max-width: 920px) {
-  .sidebar { display: none; }
-  .sidebar[data-open="true"] { display: block; }
-}
-
-/* Products header strip: heading + item count left, filter pill right. */
-.products-header {
-  display: flex; align-items: center; justify-content: space-between;
-  gap: .6rem; flex-wrap: wrap;
-}
-.products-header__meta { color: var(--text-muted); font-size: .85rem; font-weight: 600; margin-left: .35rem; }
-
-.filter-pill {
-  display: none; align-items: center; gap: .4rem;
-  min-height: 40px; padding: .35rem .95rem;
-  border-radius: 999px;
-  border: 1px solid var(--border-subtle);
-  background: var(--color-surface);
-  box-shadow: var(--shadow-card);
-  font-weight: 700; font-size: .85rem; color: var(--color-text);
-  cursor: pointer; white-space: nowrap;
-}
-.filter-pill--on { border-color: var(--color-primary); color: var(--color-primary); }
-.filter-pill__count {
-  min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px;
-  background: var(--color-primary); color: #fff;
-  font-size: .68rem; display: inline-flex; align-items: center; justify-content: center;
-}
-@media (max-width: 920px) {
-  .filter-pill { display: inline-flex; min-height: 44px; padding-inline: 1.1rem; }
+  .filter-disclosure__toggle {
+    display: flex; width: 100%; min-height: 44px;
+    align-items: center; justify-content: space-between;
+    background: none; border: 0; cursor: pointer;
+    padding: .75rem .25rem; font: inherit; font-weight: 700;
+    color: var(--color-text);
+  }
+  .filter-disclosure__body { display: none; }
+  .filter-disclosure[data-open="true"] .filter-disclosure__body { display: block; }
 }
 
 /* ── Product grid / cards ───────────────────────────────────────────────── */
@@ -251,15 +232,6 @@ a:hover { text-decoration: underline; }
 .hero__copy { flex: 1 1 340px; }
 .hero__copy h1 { margin: 0 0 .35rem; font-size: clamp(1.5rem, 3.4vw, 2.2rem); }
 .hero__copy p { margin: 0 0 1rem; color: var(--text-muted); max-width: 46ch; }
-
-/* <=639px: hide the CTA banner + oversized brand image (their routes remain
-   one tap away in the header drawer) and condense the hero so the catalog
-   starts without a scroll of dead space. */
-@media (max-width: 639px) {
-  .hero { padding: .9rem 1rem; gap: .6rem; margin-bottom: .15rem; }
-  .hero__cta, .hero__logo { display: none; }
-  .hero__copy p { margin-bottom: .15rem; font-size: .92rem; }
-}
 
 /* Explicit responsive tiers (2 on phones, 3 from 640px, 4 from 1024px).
    minmax(0,…) keeps long product names inside their cell — no row-wide
@@ -280,33 +252,22 @@ a:hover { text-decoration: underline; }
   background: var(--color-app-bg); border-bottom: 1px solid var(--border-subtle);
   display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: .8rem;
 }
-.product-card__img { width: 100%; height: 100%; object-fit: contain; }
 .product-card__body { padding: .8rem; display: flex; flex-direction: column; gap: .45rem; flex: 1; }
-.product-card__name { font-weight: 700; font-size: .95rem; margin: 0; overflow-wrap: break-word; min-width: 0; }
+.product-card__name { font-weight: 700; font-size: .95rem; margin: 0; }
 .product-card__meta { display: flex; flex-wrap: wrap; gap: .35rem; }
 .product-card__price { font-size: 1.02rem; font-weight: 800; }
 .product-card__foot { margin-top: auto; display: flex; justify-content: space-between; align-items: center; gap: .5rem; }
 
-/* 2-up narrow cards: square-cover thumbs, .5rem padding, clamped titles —
-   two cards per row with nothing overflowing its column. */
+/* 2-up narrow cards: tighter type + stacked foot so nothing overlaps. */
 @media (max-width: 639px) {
   .product-grid { gap: .6rem; }
-  .product-card__thumb { aspect-ratio: 1 / 1; }
-  .product-card__img { object-fit: cover; }
-  .product-card__body { padding: .5rem; gap: .3rem; }
-  .product-card__name {
-    font-size: .78rem; line-height: 1.25;
-    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
+  .product-card__body { padding: .55rem; gap: .3rem; }
+  .product-card__name { font-size: .78rem; line-height: 1.3; }
   .product-card__meta { gap: .25rem; }
   .product-card__meta .chip { font-size: .64rem; padding: .1rem .35rem; }
-  .product-card__price { font-size: .85rem; font-weight: 700; }
+  .product-card__price { font-size: .82rem; }
   .product-card__foot { flex-direction: column; align-items: stretch; gap: .35rem; }
-  .product-card__foot .btn--sm {
-    min-height: 40px; font-size: .72rem; padding: .3rem .45rem;
-    white-space: nowrap; justify-content: center;
-  }
+  .product-card__foot .btn--sm { min-height: 40px; font-size: .74rem; padding: .35rem .5rem; }
 }
 
 /* Add-to-cart feedback. On grid cards (.atc--floating) it is an overlay
@@ -511,10 +472,6 @@ a:hover { text-decoration: underline; }
   box-shadow: var(--shadow-card);
   padding: .85rem 1rem calc(.85rem + env(safe-area-inset-bottom));
 }
-/* Guard: the author `display:flex` above beats the UA `[hidden]` default, so
-   without this rule the drawer would be OPEN on first load at <=768px even
-   though MobileNav renders `hidden={!open}` with open=false. */
-.mobile-nav[hidden] { display: none; }
 .mobile-nav a {
   display: flex; align-items: center; min-height: 44px;
   color: var(--color-text); font-weight: 600; border-radius: .55rem;
@@ -526,23 +483,6 @@ a:hover { text-decoration: underline; }
 .mobile-nav .btn { justify-content: center; }
 .mobile-nav select { min-height: 44px; font-size: 16px; }
 .mobile-nav > .row { justify-content: space-between; }
-
-/* Drawer utility row: currency + avatar left, Sign out far right. */
-.mobile-nav__util { display: flex; align-items: center; gap: .5rem; }
-.usermenu--compact {
-  display: flex; align-items: center; gap: .4rem;
-  flex: 1; min-width: 0; justify-content: space-between;
-}
-.user-avatar {
-  width: 44px; height: 44px; flex: 0 0 auto;
-  border-radius: 50%;
-  border: 1px solid var(--border-subtle);
-  background: var(--color-app-bg); color: var(--color-text);
-  display: inline-flex; align-items: center; justify-content: center;
-  font-weight: 700;
-}
-.user-avatar:hover { border-color: var(--color-primary); text-decoration: none; }
-.usermenu__signout { white-space: nowrap; margin-left: auto; }
 
 /* Offline-demo notice (root layout). */
 .demo-banner {
