@@ -1,21 +1,24 @@
 "use client";
 
 // src/components/services/DateTimePickerModal.tsx
-// Booking window picker: BOTH ends of the requested window are chosen here.
-// Selection model:
-//   tap a day → pick start hour + AM/PM → optionally pick an end hour +
-//   AM/PM → "OK" commits start (and end, when set) to the draft store and
-//   dismisses. Cancel / Escape / scrim dismiss WITHOUT saving — nothing
-//   flows into the booking until OK. The end time follows the selected day
-//   (same-day windows; multi-day jobs are staff-scheduled anyway), and OK
-//   enforces end > start before saving.
-// Validation (must be today-or-later) runs at OK time, surfaced in-modal,
-// mirroring the wizard's own "window must be in the future" guard.
+// Booking WINDOW picker: both ends of the requested window are chosen here,
+// each with its own DATE and TIME. One calendar + slot grid, aimed at either
+// end via the Start / End tabs:
+//   Start tab → tap day, pick hour, AM/PM   → sets the window start
+//   End tab   → same controls               → sets the window end
+// The End Date defaults to the Start Date the moment the end is switched on
+// (and keeps following the start day until the user overrides it — see the
+// "inherit while untouched" branch in pickDay), but stays fully editable via
+// the calendar. OK (primary, bottom-right) validates and commits BOTH ends
+// to the draft store, then dismisses; Cancel / Escape / scrim dismiss WITHOUT
+// saving. Same-day end times before the start (or a wholly past window) are
+// rejected in-modal.
 
 import { useEffect, useMemo, useState } from "react";
 
 const SLOT_HOURS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 const DOW = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+type Target = "start" | "end";
 
 function startOfDay(d: Date): Date {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -29,6 +32,23 @@ function sameDay(a: Date, b: Date): boolean {
   );
 }
 
+function to12(h24: number): { hour12: number; pm: boolean } {
+  return { hour12: h24 % 12 === 0 ? 12 : (h24 % 12), pm: h24 >= 12 };
+}
+
+function from12(hour12: number, pm: boolean): number {
+  return (hour12 % 12) + (pm ? 12 : 0);
+}
+
+const fmtDateTime = new Intl.DateTimeFormat("en-NG", {
+  dateStyle: "medium",
+  timeStyle: "short",
+});
+const fmtMonth = new Intl.DateTimeFormat("en-NG", {
+  month: "long",
+  year: "numeric",
+});
+
 export function DateTimePickerModal(props: {
   open: boolean;
   /** Existing ISO values to prefill from, if any. */
@@ -39,21 +59,30 @@ export function DateTimePickerModal(props: {
 }) {
   const { open, value, endValue, onCommit, onClose } = props;
 
-  const initial = useMemo(() => {
-    const parsed = value ? new Date(value) : null;
-    const valid = parsed && !Number.isNaN(parsed.getTime()) ? parsed : null;
-    return valid;
-  }, [value]);
+  const parsed = useMemo(
+    () => ({
+      start: (() => {
+        const d = value ? new Date(value) : null;
+        return d && !Number.isNaN(d.getTime()) ? d : null;
+      })(),
+      end: (() => {
+        const d = endValue ? new Date(endValue) : null;
+        return d && !Number.isNaN(d.getTime()) ? d : null;
+      })(),
+    }),
+    [value, endValue]
+  );
 
+  const [target, setTarget] = useState<Target>("start");
   const [viewYear, setViewYear] = useState(new Date().getFullYear());
   const [viewMonth, setViewMonth] = useState(new Date().getMonth());
-  // A full Date (local, time zeroed) — storing only a day number would let
-  // the visible month silently redefine the selection after navigation.
-  const [selected, setSelected] = useState<Date | null>(null);
-  const [hour, setHour] = useState<number | null>(null);
-  const [pm, setPm] = useState(false);
-  // Optional end of the window — same day as the selected start.
-  const [endSet, setEndSet] = useState(false);
+  // A full local Date per end — day-number storage let the visible month
+  // silently redefine a selection after navigation (fixed in R19; both ends
+  // now need independent days).
+  const [startDay, setStartDay] = useState<Date | null>(null);
+  const [endDay, setEndDay] = useState<Date | null>(null);
+  const [startHour, setStartHour] = useState<number | null>(null);
+  const [startPm, setStartPm] = useState(false);
   const [endHour, setEndHour] = useState<number | null>(null);
   const [endPm, setEndPm] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -61,32 +90,32 @@ export function DateTimePickerModal(props: {
   // Re-seed from the committed draft values every time the modal opens.
   useEffect(() => {
     if (!open) return;
-    const base = initial ?? new Date();
+    const base = parsed.start ?? new Date();
+    setTarget("start");
     setViewYear(base.getFullYear());
     setViewMonth(base.getMonth());
-    if (initial) {
-      setSelected(startOfDay(initial));
-      const h24 = initial.getHours();
-      setPm(h24 >= 12);
-      setHour(h24 % 12 === 0 ? 12 : h24 % 12);
+    if (parsed.start) {
+      setStartDay(startOfDay(parsed.start));
+      const t = to12(parsed.start.getHours());
+      setStartHour(t.hour12);
+      setStartPm(t.pm);
     } else {
-      setSelected(null);
-      setHour(null);
-      setPm(false);
+      setStartDay(null);
+      setStartHour(null);
+      setStartPm(false);
     }
-    const endParsed = endValue ? new Date(endValue) : null;
-    const end = endParsed && !Number.isNaN(endParsed.getTime()) ? endParsed : null;
-    setEndSet(!!end);
-    if (end) {
-      const e24 = end.getHours();
-      setEndPm(e24 >= 12);
-      setEndHour(e24 % 12 === 0 ? 12 : e24 % 12);
+    if (parsed.end) {
+      setEndDay(startOfDay(parsed.end));
+      const t = to12(parsed.end.getHours());
+      setEndHour(t.hour12);
+      setEndPm(t.pm);
     } else {
+      setEndDay(null);
       setEndHour(null);
       setEndPm(false);
     }
     setError(null);
-  }, [open, initial, endValue]);
+  }, [open, parsed]);
 
   useEffect(() => {
     if (!open) return;
@@ -100,6 +129,10 @@ export function DateTimePickerModal(props: {
   if (!open) return null;
 
   const today = startOfDay(new Date());
+  const activeDay = target === "start" ? startDay : endDay;
+  const activeHour = target === "start" ? startHour : endHour;
+  const activePm = target === "start" ? startPm : endPm;
+
   const firstDow = new Date(viewYear, viewMonth, 1).getDay();
   const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
   const cells: (Date | null)[] = [
@@ -110,63 +143,133 @@ export function DateTimePickerModal(props: {
     ),
   ];
 
+  const atCurrentMonth =
+    viewYear === today.getFullYear() && viewMonth === today.getMonth();
+
   const shiftMonth = (delta: number) => {
-    const atCurrentMonth =
-      viewYear === today.getFullYear() && viewMonth === today.getMonth();
     if (delta < 0 && atCurrentMonth) return; // never page before today's month
     const next = new Date(viewYear, viewMonth + delta, 1);
     setViewYear(next.getFullYear());
     setViewMonth(next.getMonth());
   };
 
+  const focusTarget = (t: Target) => {
+    setTarget(t);
+    const day = t === "start" ? startDay : endDay;
+    if (day) {
+      setViewYear(day.getFullYear());
+      setViewMonth(day.getMonth());
+    }
+    setError(null);
+  };
+
+  const dayFloor =
+    target === "end" && startDay && startDay > today ? startDay : today;
+
+  function pickDay(date: Date) {
+    if (target === "start") {
+      const previous = startDay;
+      setStartDay(date);
+      // End date DEFAULTS to the start date: while the user has never moved
+      // it off the start day, it keeps following; once overridden it stays.
+      if (
+        endDay &&
+        (!previous || sameDay(endDay, previous) || sameDay(endDay, date))
+      ) {
+        setEndDay(date);
+      }
+    } else {
+      setEndDay(date);
+    }
+    setError(null);
+  }
+
+  function setActiveHour(h: number) {
+    if (target === "start") setStartHour(h);
+    else setEndHour(h);
+    setError(null);
+  }
+
+  function setActivePm(pm: boolean) {
+    if (target === "start") setStartPm(pm);
+    else setEndPm(pm);
+  }
+
+  function toggleEnd() {
+    if (endDay) {
+      // Off: wipe the whole end so a stale window end can't linger.
+      setEndDay(null);
+      setEndHour(null);
+      setEndPm(false);
+      setTarget("start");
+    } else {
+      const nextDay = startDay ?? today;
+      setEndDay(nextDay);
+      if (startHour !== null) {
+        // Sensible default: start + 1h on the same day.
+        const h24 = (from12(startHour, startPm) + 1) % 24;
+        const t = to12(h24);
+        setEndHour(t.hour12);
+        setEndPm(t.pm);
+      }
+      setViewYear(nextDay.getFullYear());
+      setViewMonth(nextDay.getMonth());
+      setTarget("end");
+    }
+    setError(null);
+  }
+
   function confirm() {
-    if (!selected || hour === null) {
-      setError("Pick a date and an hour first.");
+    if (!startDay || startHour === null) {
+      setError("Pick a start date and hour first.");
       return;
     }
-    const h24 = (hour % 12) + (pm ? 12 : 0);
-    const picked = new Date(
-      selected.getFullYear(),
-      selected.getMonth(),
-      selected.getDate(),
-      h24,
+    const startDate = new Date(
+      startDay.getFullYear(),
+      startDay.getMonth(),
+      startDay.getDate(),
+      from12(startHour, startPm),
       0,
       0
     );
-    if (picked.getTime() < Date.now()) {
-      setError("The requested time must be in the future.");
+    if (startDate.getTime() < Date.now()) {
+      setError("The requested start must be in the future.");
       return;
     }
-    let endPicked: Date | undefined;
-    if (endSet) {
+    let endDate: Date | undefined;
+    if (endDay) {
       if (endHour === null) {
-        setError("Pick an end hour — or turn the end time off.");
+        setError("Pick an end hour — or switch the end off.");
         return;
       }
-      const e24 = (endHour % 12) + (endPm ? 12 : 0);
-      endPicked = new Date(
-        picked.getFullYear(),
-        picked.getMonth(),
-        picked.getDate(),
-        e24,
+      endDate = new Date(
+        endDay.getFullYear(),
+        endDay.getMonth(),
+        endDay.getDate(),
+        from12(endHour, endPm),
         0,
         0
       );
-      if (endPicked.getTime() <= picked.getTime()) {
-        setError("The end time must be after the start time.");
+      if (endDate.getTime() <= startDate.getTime()) {
+        setError("The end must be after the start.");
         return;
       }
     }
-    onCommit(picked.toISOString(), endPicked?.toISOString());
+    onCommit(startDate.toISOString(), endDate?.toISOString());
     onClose();
   }
 
-  const monthLabel = new Intl.DateTimeFormat("en-NG", {
-    month: "long",
-    year: "numeric",
-  }).format(new Date(viewYear, viewMonth, 1));
-  const atFirstMonthOfToday =
-    viewYear === today.getFullYear() && viewMonth === today.getMonth();
+  const preview = (day: Date | null, hour: number | null, pm: boolean) =>
+    day && hour !== null
+      ? fmtDateTime.format(
+          new Date(
+            day.getFullYear(),
+            day.getMonth(),
+            day.getDate(),
+            from12(hour, pm)
+          )
+        )
+      : "—";
 
   return (
     <>
@@ -185,7 +288,7 @@ export function DateTimePickerModal(props: {
         >
           <div className="dtm__head">
             <strong id="dtm-title" className="dtm__month">
-              {monthLabel}
+              {fmtMonth.format(new Date(viewYear, viewMonth, 1))}
             </strong>
             <span className="dtm__navbtns">
               <button
@@ -193,7 +296,7 @@ export function DateTimePickerModal(props: {
                 className="dtm__navbtn"
                 aria-label="Previous month"
                 onClick={() => shiftMonth(-1)}
-                disabled={atFirstMonthOfToday}
+                disabled={atCurrentMonth}
               >
                 ‹
               </button>
@@ -208,12 +311,59 @@ export function DateTimePickerModal(props: {
             </span>
           </div>
 
+          {/* Tabs decide WHICH end the calendar + slots below edit. */}
+          <div className="dtm__tabs" role="tablist" aria-label="Edit window start or end">
+            <button
+              type="button"
+              role="tab"
+              className="dtm__tab"
+              aria-selected={target === "start"}
+              onClick={() => focusTarget("start")}
+            >
+              Start date &amp; time
+            </button>
+            <button
+              type="button"
+              role="tab"
+              className="dtm__tab"
+              aria-selected={target === "end"}
+              disabled={!endDay}
+              onClick={() => focusTarget("end")}
+            >
+              End date &amp; time
+            </button>
+            <button
+              type="button"
+              className="dtm__toggle"
+              role="switch"
+              aria-checked={!!endDay}
+              onClick={toggleEnd}
+            >
+              {endDay ? "End: on" : "End: off"}
+            </button>
+          </div>
+
+          <p className="dtm__preview">
+            <span>
+              <b>Start</b> {preview(startDay, startHour, startPm)}
+            </span>
+            <span aria-hidden="true">→</span>
+            <span>
+              <b>End</b>{" "}
+              {endDay ? preview(endDay, endHour, endPm) : "flexible"}
+            </span>
+          </p>
+
           <div className="dtm__dow" aria-hidden="true">
             {DOW.map((d) => (
               <span key={d}>{d}</span>
             ))}
           </div>
-          <div className="dtm__days" role="grid" aria-label="Choose a date">
+          <div
+            className="dtm__days"
+            role="grid"
+            aria-label={`Choose ${target} date`}
+          >
             {cells.map((date, i) =>
               date === null ? (
                 <span key={`pad-${i}`} />
@@ -223,17 +373,14 @@ export function DateTimePickerModal(props: {
                   key={date.toISOString()}
                   className="dtm__day"
                   role="gridcell"
-                  aria-pressed={selected ? sameDay(selected, date) : false}
+                  aria-pressed={activeDay ? sameDay(activeDay, date) : false}
                   aria-label={new Intl.DateTimeFormat("en-NG", {
                     weekday: "long",
                     day: "numeric",
                     month: "long",
                   }).format(date)}
-                  disabled={date < today}
-                  onClick={() => {
-                    setSelected(date);
-                    setError(null);
-                  }}
+                  disabled={date < dayFloor}
+                  onClick={() => pickDay(date)}
                 >
                   {date.getDate()}
                 </button>
@@ -241,103 +388,42 @@ export function DateTimePickerModal(props: {
             )}
           </div>
 
-          <span className="dtm__section-label">Time</span>
-          <div className="dtm__slots" role="group" aria-label="Hour of day">
+          <span className="dtm__section-label">
+            {target === "start" ? "Start time" : "End time"} · {fmtMonth.format(new Date(viewYear, viewMonth, 1))}
+          </span>
+          <div
+            className="dtm__slots"
+            role="group"
+            aria-label={`${target} hour of day`}
+          >
             {SLOT_HOURS.map((h) => (
               <button
                 type="button"
-                key={h}
+                key={`${target}-${h}`}
                 className="dtm__slot"
-                aria-pressed={hour === h}
-                onClick={() => {
-                  setHour(h);
-                  setError(null);
-                }}
+                aria-pressed={activeHour === h}
+                onClick={() => setActiveHour(h)}
               >
                 {h}:00
               </button>
             ))}
           </div>
-          <div className="dtm__ampm" role="group" aria-label="AM or PM">
+          <div className="dtm__ampm" role="group" aria-label={`${target} AM or PM`}>
             <button
               type="button"
-              aria-pressed={!pm}
-              onClick={() => setPm(false)}
+              aria-pressed={!activePm}
+              onClick={() => setActivePm(false)}
             >
               AM
             </button>
             <button
               type="button"
-              aria-pressed={pm}
-              onClick={() => setPm(true)}
+              aria-pressed={activePm}
+              onClick={() => setActivePm(true)}
             >
               PM
             </button>
           </div>
-
-          <div className="dtm__endrow">
-            <span className="dtm__section-label">End time (optional)</span>
-            <button
-              type="button"
-              className="dtm__toggle"
-              role="switch"
-              aria-checked={endSet}
-              onClick={() => {
-                setEndSet((on) => {
-                  if (!on && endHour === null) {
-                    // Sensible default when first switched on: start + 1 h.
-                    const base = (hour ?? 9 % 12) + 1;
-                    setEndHour(((base % 12) + 12) % 12 || 12);
-                    setEndPm(pm);
-                  }
-                  return !on;
-                });
-                setError(null);
-              }}
-            >
-              {endSet ? "On" : "Off"}
-            </button>
-          </div>
-          {endSet ? (
-            <>
-              <div
-                className="dtm__slots"
-                role="group"
-                aria-label="End hour of day"
-              >
-                {SLOT_HOURS.map((h) => (
-                  <button
-                    type="button"
-                    key={`end-${h}`}
-                    className="dtm__slot"
-                    aria-pressed={endHour === h}
-                    onClick={() => {
-                      setEndHour(h);
-                      setError(null);
-                    }}
-                  >
-                    {h}:00
-                  </button>
-                ))}
-              </div>
-              <div className="dtm__ampm" role="group" aria-label="End AM or PM">
-                <button
-                  type="button"
-                  aria-pressed={!endPm}
-                  onClick={() => setEndPm(false)}
-                >
-                  AM
-                </button>
-                <button
-                  type="button"
-                  aria-pressed={endPm}
-                  onClick={() => setEndPm(true)}
-                >
-                  PM
-                </button>
-              </div>
-            </>
-          ) : null}
 
           {error ? (
             <p className="dtm__error" role="alert">
@@ -353,13 +439,13 @@ export function DateTimePickerModal(props: {
             >
               Cancel
             </button>
-            {/* Primary confirm — full-size (48px floor via mobile .btn rule),
+            {/* Primary confirm — full-size (44px mobile floor via .btn),
                 bottom-right, saves BOTH ends of the window in one commit. */}
             <button
               type="button"
               className="btn dtm__ok"
               onClick={confirm}
-              disabled={!selected || hour === null}
+              disabled={!startDay || startHour === null}
               aria-label="Confirm date and time"
             >
               OK
