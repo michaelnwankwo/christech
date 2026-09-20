@@ -27,9 +27,10 @@
 
   --radius-card: 0.875rem;
   --shadow-card: 0 1px 2px rgb(15 23 42 / 0.06), 0 8px 24px -12px rgb(15 23 42 / 0.12);
-  /* Sized for the 2.4x logo (91px img) + breathing room; sticky sidebar and
-     the drawer's top:100% both key off this variable automatically. */
-  --header-height: 112px;
+  /* Fits the cropped wordmark (44px visible box) with breathing room; the
+     sticky sidebar offset and the drawer's top:100% key off this variable.
+     (The mobile media block drops it to 64px around the 36px mark.) */
+  --header-height: 80px;
 }
 
 html,
@@ -103,9 +104,11 @@ a:hover { text-decoration: underline; }
 .site-header__mobile-actions .cart-badge-count { top: -4px; right: -4px; }
 .brand-logo { display: inline-flex; align-items: center; gap: .5rem; color: var(--color-text); }
 .brand-logo:hover { text-decoration: none; }
-/* 2.4x per branding request (was 38px). width:auto + object-fit:contain
-   guarantee the 1309:800 art never stretches at any breakpoint. */
-.brand-logo img { height: 91px; width: auto; max-width: 100%; object-fit: contain; display: block; }
+/* Sizes now mean VISIBLE pixels: /logo-header.png is cropped to its alpha
+   bbox (1106:167). Desktop 44px; width:auto + object-fit:contain keep the
+   ratio. The ≤380px guard below swaps to width-driven sizing so the ~6.6:1
+   wordmark can never push the cart/burger cluster out of a small phone. */
+.brand-logo img { height: 44px; width: auto; max-width: 100%; object-fit: contain; display: block; }
 .brand-logo .brand-logo__mark { flex: none; }
 .brand-logo__word { display: flex; flex-direction: column; line-height: 1.05; }
 .brand-logo__word b { font-size: 1rem; letter-spacing: .01em; font-weight: 800; }
@@ -153,6 +156,12 @@ a:hover { text-decoration: underline; }
 .chip--danger { color: #b91c1c; border-color: color-mix(in srgb, var(--color-warning) 45%, white); background: color-mix(in srgb, var(--color-warning) 8%, white); }
 /* Profile pill: the requested slate recipe (bg-slate-100 → slate-200,
    rounded-full, text-slate-800, py-1.5 px-3) with icon + caret slots. */
+/* ≤380px the 36px-tall mark (≈238px wide) would crowd the 44px controls;
+   let width drive and the aspect ratio shrinks the height instead. */
+@media (max-width: 380px) {
+  .brand-logo img { width: calc(100vw - 172px); height: auto; max-width: none; }
+}
+
 .usermenu-pill {
   display: inline-flex; align-items: center; gap: .375rem;
   padding: .375rem .75rem; border-radius: 999px;
@@ -807,9 +816,6 @@ a:hover { text-decoration: underline; }
 .site-footer__inner { max-width: 1280px; margin: 0 auto; padding: 1rem; display: flex; flex-direction: column; align-items: center; gap: .45rem; justify-content: center; }
 /* Height-driven sizing + width:auto keeps the 1309:800 art undistorted at
    every breakpoint (same rule the header logo uses). */
-/* Footer + drawer marks scaled 2.4x with the header (30→72 / 26→62). */
-.site-footer__logo { height: 72px; width: auto; max-width: 100%; object-fit: contain; display: block; }
-@media (max-width: 768px) { .site-footer__logo { height: 62px; } }
 
 /* ── Utilities ─────────────────────────────────────────────────────────── */
 .muted { color: var(--text-muted); }
@@ -926,7 +932,7 @@ a:hover { text-decoration: underline; }
 
 /* Drawer utility row: currency + avatar left, Sign out far right. */
 /* Drawer branding header: new wordmark at the top of the panel. */
-.mobile-nav .mobile-nav__brand img { height: 72px; width: auto; max-width: 100%; object-fit: contain; display: block; }
+.mobile-nav .mobile-nav__brand img { height: 36px; width: auto; max-width: 100%; object-fit: contain; display: block; }
 
 /* Utility row sits under a hairline so currency never crowds the profile
    card or the nav buttons. */
@@ -963,9 +969,10 @@ a:hover { text-decoration: underline; }
   .site-header__mobile-actions { display: flex; }
   .mobile-nav-host { display: block; }
   .site-header__inner { gap: .5rem; padding: 0 .75rem; }
-  /* Bar shrinks to fit the 72px mobile mark (was 30px in a 64px bar). */
-  :root { --header-height: 92px; }
-  .brand-logo img { height: 72px; }
+  /* Mobile mark ≈ 2.5x its previous VISIBLE height (15px → 36px): the old
+     72px CSS box only rendered ~15px of art through transparent padding. */
+  :root { --header-height: 64px; }
+  .brand-logo img { height: 36px; }
 
   /* Touch targets: primary actions grow to 44px, compact ones to 40px. */
   .btn { min-height: 44px; padding-inline: 1.1rem; }

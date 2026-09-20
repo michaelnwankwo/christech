@@ -13,6 +13,7 @@ import {
   draftToQuery,
   isDraftEmpty,
   majorToMinorOrEmpty,
+  parsePriceBound,
 } from "@/lib/catalog/filters-query";
 
 describe("draftFromQuery", () => {
@@ -118,5 +119,45 @@ describe("majorToMinorOrEmpty", () => {
     expect(majorToMinorOrEmpty("0")).toBe("");
     expect(majorToMinorOrEmpty("-12")).toBe("");
     expect(majorToMinorOrEmpty("one two")).toBe("");
+  });
+});
+
+describe("price units: typed major → URL minor (kobo), exactly ×100", () => {
+  it("converts a typed ₦500,000 to 50000000 — never ×1000", () => {
+    expect(majorToMinorOrEmpty("500000")).toBe("50000000");
+    expect(majorToMinorOrEmpty("500,000")).toBe("50000000");
+    expect(majorToMinorOrEmpty("5000.50")).toBe("500050");
+  });
+
+  it("round-trips URL kobo back into the draft's major-unit input", () => {
+    const draft = draftFromQuery(new URLSearchParams("min=50000000"));
+    expect(draft.min).toBe("500000");
+    expect(String(draftToQuery(draft).get("min"))).toBe("50000000");
+  });
+});
+
+describe("parsePriceBound — raw URL guard feeding the gte/lte filter", () => {
+  it("accepts clean integer kobo", () => {
+    expect(parsePriceBound("500000000")).toBe(500000000);
+    expect(parsePriceBound(" 12345 ")).toBe(12345);
+  });
+
+  it("truncates fractions to whole kobo", () => {
+    expect(parsePriceBound("80.6")).toBe(80);
+  });
+
+  it("treats 0 as a real bound but rejects negatives", () => {
+    expect(parsePriceBound("0")).toBe(0);
+    expect(parsePriceBound("-1")).toBeUndefined();
+    expect(parsePriceBound("-500000000")).toBeUndefined();
+  });
+
+  it("rejects garbage, Infinities and empties instead of disabling the filter", () => {
+    for (const junk of ["", " ", "abc", "500abc", "1e999", "NaN", undefined])
+      expect(parsePriceBound(junk)).toBeUndefined();
+  });
+
+  it("takes the first value on repeated params, like every other filter", () => {
+    expect(parsePriceBound(["100", "999999"])).toBe(100);
   });
 });

@@ -2,11 +2,14 @@ import Link from "next/link";
 import Image from "next/image";
 
 // src/components/layout/BrandLogo.tsx
-// Primary logo lives at public/logo.png (1309×800, "CHRISVISCUS
-// TECHNOLOGIES" wordmark). next/image keeps the intrinsic ratio via matching
-// width/height props; display size is CSS-driven (height 38/30px, width
-// auto) so it renders undistorted at every breakpoint. unoptimized keeps the
-// byte path CSP-safe (img-src 'self'), same as before.
+// Header/drawer brand mark lives at public/logo-header.png — the full
+// wordmark art cropped to its alpha bbox (1106×167) so the CSS box IS the
+// visible size (the uncropped /logo.png is ~79% transparent padding, which
+// made "big" heights render as ~15px marks). The hero keeps the padded
+// original. next/image keeps the intrinsic ratio via matching width/height
+// props; display size stays CSS-driven (height auto-width), so the mark is
+// undistorted at every breakpoint. unoptimized keeps the byte path CSP-safe
+// (img-src 'self'), same as before.
 export function BrandLogo() {
   return (
     <Link
@@ -15,10 +18,10 @@ export function BrandLogo() {
       aria-label="Chrisviscus Technologies — home"
     >
       <Image
-        src="/logo.png"
+        src="/logo-header.png"
         alt="Chrisviscus Technologies"
-        width={1309}
-        height={800}
+        width={1106}
+        height={167}
         priority
         unoptimized
       />

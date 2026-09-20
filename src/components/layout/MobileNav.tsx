@@ -55,10 +55,10 @@ export function MobileNav() {
       >
         <Link href="/" className="mobile-nav__brand" aria-label="Chrisviscus Technologies — home">
           <Image
-            src="/logo.png"
+            src="/logo-header.png"
             alt="Chrisviscus Technologies"
-            width={1309}
-            height={800}
+            width={1106}
+            height={167}
             unoptimized
           />
         </Link>

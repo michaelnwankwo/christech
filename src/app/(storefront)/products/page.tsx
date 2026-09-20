@@ -4,6 +4,7 @@ import { ProductGrid } from "@/components/products/ProductGrid";
 import { BrandLoader } from "@/components/ui/BrandLoader";
 import { FilterPill } from "@/components/products/FilterPill";
 import { listProductCards } from "@/lib/catalog/queries";
+import { parsePriceBound } from "@/lib/catalog/filters-query";
 
 export const dynamic = "force-dynamic";
 
@@ -32,8 +33,10 @@ export default async function ProductsPage({
     brand: list(sp.brand),
     usage: list(sp.usage),
     availableOnly: sp.available === "1",
-    minNgnMinor: Number.isFinite(Number(sp.min)) && sp.min ? Number(sp.min) : undefined,
-    maxNgnMinor: Number.isFinite(Number(sp.max)) && sp.max ? Number(sp.max) : undefined,
+    // Integer-kobo bounds via the shared codec guard (rejects garbage and
+    // negatives; the URL stores MINOR units — ₦500,000 typed = min=50000000).
+    minNgnMinor: parsePriceBound(sp.min),
+    maxNgnMinor: parsePriceBound(sp.max),
     page: Math.max(1, Math.floor(Number(first(sp.page)) || 1)),
   };
 

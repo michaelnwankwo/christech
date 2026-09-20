@@ -56,6 +56,24 @@ export function majorToMinorOrEmpty(raw: string): string {
   return String(Math.round(Number((n * 100).toFixed(4))));
 }
 
+/**
+ * Server-side guard for the RAW ?min/?max query params (the client codec
+ * above always emits integer kobo, but URLs are user-editable). Strict by
+ * construction: first value wins on repeats, whitespace tolerated, garbage
+ * ("abc"), Infinities and NEGATIVE bounds become `undefined` — a "-1" must
+ * never sail through and silently disarm the filter — and fractions are
+ * truncated to whole kobo so the bigint comparison never sees a decimal.
+ */
+export function parsePriceBound(
+  raw: string | string[] | undefined
+): number | undefined {
+  const value = (Array.isArray(raw) ? raw[0] : raw)?.trim();
+  if (!value) return undefined;
+  const n = Number(value);
+  if (!Number.isFinite(n) || n < 0) return undefined;
+  return Math.trunc(n);
+}
+
 export function draftFromQuery(sp: URLSearchParams): FilterDraft {
   return {
     category: sp.get("category") ?? "",
