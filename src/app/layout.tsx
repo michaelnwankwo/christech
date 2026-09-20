@@ -33,12 +33,14 @@ export const metadata: Metadata = {
   },
   description:
     "Enterprise CCTV, networking hardware, and scheduled installation & support services for Nigerian homes, SMEs, and ISPs.",
-  // Icon set generated from the new wordmark: square mark crop with rounded
-  // corners (public/icon.png 512²) + multi-size favicon.ico; the legacy
-  // /brand path no longer appears in metadata.
+  // Favicon REVERTED to the pre-logo-update asset on request: the original
+  // brand PNG, restored byte-for-byte from git history. The generated
+  // favicon.ico/icon.png never existed before the logo update, so "original
+  // version" means deleting them and pointing back here. (A literal
+  // src/app/favicon.ico never existed in this repo — app-dir convention
+  // files have no history entry; /brand/... is what metadata referenced.)
   icons: {
-    icon: ["/favicon.ico", "/icon.png"],
-    apple: "/icon.png",
+    icon: "/brand/chrisviscus-logo.png",
   },
   openGraph: {
     type: "website",
