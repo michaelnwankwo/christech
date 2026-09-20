@@ -79,6 +79,8 @@ type CartState = {
 
   addProduct: (line: CartLine) => void;
   addServiceAddon: (line: CartLine, parentLineId: string) => boolean;
+  /** Server-mirror hydration (src/lib/cart/sync): adopt a full line set. */
+  setCartLines: (lines: CartLine[]) => void;
   updateQuantity: (lineId: string, quantity: number) => void;
   removeLine: (lineId: string) => void;
   clearCart: () => void;
@@ -107,6 +109,12 @@ export const useCartStore = create<CartState>()(
         set((state) => ({ displayCurrency, ...invalidateQuote(state) })),
 
       setRates: (fxRates) => set({ fxRates }),
+
+      // Mirror hydration replaces the whole line set; the quote is cleared
+      // too (§21.1 #7 — server-sourced lines must never ride an old quote).
+      setCartLines: (lines) =>
+        set((state) => ({ lines, ...invalidateQuote(state) })),
+
 
       addProduct: (line) =>
         set((state) => {

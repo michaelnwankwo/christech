@@ -12,9 +12,10 @@
 // checkout/booking UI stays fully interactable offline, and NO supabase-js
 // client is constructed (its "Invalid URL" throw used to crash this effect).
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/browser";
 import { useCartStore } from "@/stores/cart-store";
+import { useCartSync } from "@/lib/cart/sync";
 import type { User } from "@supabase/supabase-js";
 import type { UsersRow } from "@/types/database";
 
@@ -61,6 +62,21 @@ export function Providers({
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<SessionState["profile"]>(null);
   const [loading, setLoading] = useState(true);
+
+  // One browser client for the cart mirror sync; null in demo mode or when
+  // Supabase env is absent (the client constructor throws on placeholders).
+  const supabase = useMemo(() => {
+    if (demoMode) return null;
+    try {
+      return createBrowserSupabaseClient();
+    } catch {
+      return null;
+    }
+  }, [demoMode]);
+
+  // Durable cart mirror (0008): pull + login merge on mount, debounced
+  // push on every mutation. No-ops while loading or unconfigured.
+  useCartSync(supabase, user, !loading);
 
   useEffect(() => {
     void useCartStore.persist.rehydrate();

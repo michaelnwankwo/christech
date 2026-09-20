@@ -106,3 +106,22 @@ export function toMinor(v: MinorAmount | null | undefined): number {
   }
   return n;
 }
+
+export type CategoriesRow = {
+  id: string;
+  name: string;
+  slug: string;
+  sort_order: number;
+  created_at: string;
+};
+
+export type CartItemsRow = {
+  id: string;
+  user_id: string | null;
+  session_id: string | null;
+  product_id: string;
+  quantity: number;
+  selected_addons: string[];
+  created_at: string;
+  updated_at: string;
+};
