@@ -344,9 +344,14 @@ a:hover { text-decoration: underline; }
    one tap away in the header drawer) and condense the hero so the catalog
    starts without a scroll of dead space. */
 @media (max-width: 639px) {
-  .hero { padding: .9rem 1rem; gap: .6rem; margin-bottom: .15rem; }
-  .hero__cta, .hero__logo { display: none; }
-  .hero__copy p { margin-bottom: .15rem; font-size: .92rem; }
+  .hero { padding: 1.25rem 1rem; gap: .75rem; margin-bottom: .15rem; }
+  .hero__logo { display: none; }
+  /* CTAs stay (spec: this round wants them tight, not hidden): side-by-side
+     when they fit, wrapping to a clean stack when they don't. */
+  .hero__cta { display: flex; flex-wrap: wrap; gap: .5rem; }
+  .hero__cta .btn { font-size: .85rem; padding: .55rem .9rem; }
+  .hero__copy h1 { font-size: 1.5rem; line-height: 1.2; margin-bottom: .3rem; }
+  .hero__copy p { margin-bottom: .5rem; font-size: .85rem; max-width: 42ch; }
 }
 
 /* Explicit responsive tiers (2 on phones, 3 from 640px, 4 from 1024px).
@@ -378,7 +383,15 @@ a:hover { text-decoration: underline; }
 /* 2-up narrow cards: square-cover thumbs, .5rem padding, clamped titles —
    two cards per row with nothing overflowing its column. */
 @media (max-width: 639px) {
-  .product-grid { gap: .6rem; }
+  /* Enforced belt-and-braces (mobile tier ONLY, so the 640px→3 and
+     1024px→4 tiers stay intact): display:grid + exactly two elastic columns
+     beat any stale auto-fill/single-column leftovers. */
+  .product-grid,
+  [data-component="product-grid"] {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: .5rem !important;
+  }
   .product-card__thumb { aspect-ratio: 1 / 1; }
   .product-card__img { object-fit: cover; }
   .product-card__body { padding: .5rem; gap: .3rem; }
@@ -390,9 +403,10 @@ a:hover { text-decoration: underline; }
   .product-card__meta { gap: .25rem; }
   .product-card__meta .chip { font-size: .64rem; padding: .1rem .35rem; }
   .product-card__price { font-size: .85rem; font-weight: 700; }
-  .product-card__foot { flex-direction: column; align-items: stretch; gap: .35rem; }
+  .product-card__foot { flex-direction: column; align-items: stretch; gap: .3rem; }
   .product-card__foot .btn--sm {
-    min-height: 40px; font-size: .72rem; padding: .3rem .45rem;
+    height: 32px; min-height: 32px;
+    font-size: .75rem; padding: .15rem .5rem;
     white-space: nowrap; justify-content: center;
   }
 }

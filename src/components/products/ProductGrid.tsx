@@ -18,7 +18,7 @@ export function ProductGrid({ cards }: { cards: ProductCard[] }) {
   }
 
   return (
-    <div className="product-grid">
+    <div className="product-grid" data-component="product-grid">
       {cards.map((card) => (
         <article key={card.id} className="product-card surface-card">
           <Link
