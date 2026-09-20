@@ -14,7 +14,7 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { AppModeSwitch } from "./AppModeSwitch";
 import { CurrencyPicker } from "./CurrencyPicker";
-import { UserMenu } from "./UserMenu";
+import { MobileProfileRow } from "./UserMenu";
 
 export function MobileNav() {
   const [open, setOpen] = useState(false);
@@ -52,9 +52,10 @@ export function MobileNav() {
         hidden={!open}
       >
         <AppModeSwitch />
+        {/* Profile first — an explicit, labeled row, not a lone avatar. */}
+        <MobileProfileRow />
         <div className="mobile-nav__util">
           <CurrencyPicker />
-          <UserMenu compact />
         </div>
       </nav>
     </div>

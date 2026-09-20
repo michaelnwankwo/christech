@@ -331,6 +331,7 @@ function ScheduleStep(props: {
 }) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const start = props.draft.requestedStartAt;
+  const end = props.draft.requestedEndAt;
 
   return (
     <div className="stack">
@@ -341,52 +342,55 @@ function ScheduleStep(props: {
         This is a request, not a confirmed slot — staff finalize the schedule
         after review.
       </p>
-      <div className="form-grid">
-        <div className="field">
-          <label htmlFor="start-picker">Start</label>
-          {/* Native <input type="datetime"> swapped for the branded modal:
-              day → hour → AM/PM → OK. Only OK writes the draft store. */}
+      <div className="field">
+        <label htmlFor="window-picker">Requested window</label>
+        {/* One branded modal owns BOTH ends: day → start hour → AM/PM →
+            optional end hour → OK. Only OK writes the draft store, and the
+            wizard-level guards (future-only, end>start) also re-run there. */}
+        <button
+          type="button"
+          id="window-picker"
+          className="btn btn--secondary"
+          style={{ justifyContent: "space-between", width: "100%" }}
+          onClick={() => setPickerOpen(true)}
+        >
+          {start ? (
+            <span className="dtm__trigger-value">
+              {formatWhen(start)}
+              {end ? ` → ${formatWhen(end)}` : ""}
+            </span>
+          ) : (
+            <span className="dtm__trigger-hint">
+              Choose date &amp; time… (no window = flexible)
+            </span>
+          )}
+          <span aria-hidden="true">▾</span>
+        </button>
+        {start || end ? (
           <button
             type="button"
-            id="start-picker"
-            className="btn btn--secondary"
-            style={{ justifyContent: "space-between", width: "100%" }}
-            onClick={() => setPickerOpen(true)}
-          >
-            {start ? (
-              <span className="dtm__trigger-value">{formatWhen(start)}</span>
-            ) : (
-              <span className="dtm__trigger-hint">Choose date &amp; time…</span>
-            )}
-            <span aria-hidden="true">▾</span>
-          </button>
-          {start ? (
-            <button
-              type="button"
-              className="btn btn--ghost btn--sm"
-              onClick={() => props.update({ requestedStartAt: undefined })}
-            >
-              Clear start time
-            </button>
-          ) : null}
-        </div>
-        <div className="field">
-          <label htmlFor="end">End (optional)</label>
-          <input
-            id="end"
-            type="datetime-local"
-            value={toLocalInput(props.draft.requestedEndAt)}
-            onChange={(e) =>
-              props.update({ requestedEndAt: fromLocalInput(e.target.value) })
+            className="btn btn--ghost btn--sm"
+            onClick={() =>
+              props.update({ requestedStartAt: undefined, requestedEndAt: undefined })
             }
-          />
-        </div>
+          >
+            Clear window
+          </button>
+        ) : null}
       </div>
 
       <DateTimePickerModal
         open={pickerOpen}
         value={start}
-        onCommit={(iso) => props.update({ requestedStartAt: iso })}
+        endValue={end}
+        onCommit={(startIso, endIso) =>
+          props.update({
+            requestedStartAt: startIso,
+            // Turning the end-time switch off in the modal must clear any
+            // previously committed end, or a stale window end would linger.
+            requestedEndAt: endIso,
+          })
+        }
         onClose={() => setPickerOpen(false)}
       />
     </div>
@@ -463,19 +467,3 @@ function AddressStep(props: {
   );
 }
 
-function toLocalInput(iso: string | undefined): string {
-  if (!iso) return "";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "";
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(
-    d.getHours()
-  )}:${pad(d.getMinutes())}`;
-}
-
-function fromLocalInput(local: string): string | undefined {
-  if (!local) return undefined;
-  const ms = Date.parse(local);
-  if (Number.isNaN(ms)) return undefined;
-  return new Date(ms).toISOString();
-}

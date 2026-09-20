@@ -1,12 +1,14 @@
 "use client";
 
 // src/components/services/DateTimePickerModal.tsx
-// Booking schedule picker (replaces the bare native datetime-local for the
-// START of the window — the optional END keeps its native input, which is
-// correct for "anytime after start" flexibility). Selection model:
-//   tap a day → tap an hour slot → pick AM/PM → "OK" commits to the draft
-//   store and dismisses. Cancel / Escape / scrim dismiss WITHOUT saving,
-//   exactly as required: nothing flows into the booking until OK.
+// Booking window picker: BOTH ends of the requested window are chosen here.
+// Selection model:
+//   tap a day → pick start hour + AM/PM → optionally pick an end hour +
+//   AM/PM → "OK" commits start (and end, when set) to the draft store and
+//   dismisses. Cancel / Escape / scrim dismiss WITHOUT saving — nothing
+//   flows into the booking until OK. The end time follows the selected day
+//   (same-day windows; multi-day jobs are staff-scheduled anyway), and OK
+//   enforces end > start before saving.
 // Validation (must be today-or-later) runs at OK time, surfaced in-modal,
 // mirroring the wizard's own "window must be in the future" guard.
 
@@ -29,12 +31,13 @@ function sameDay(a: Date, b: Date): boolean {
 
 export function DateTimePickerModal(props: {
   open: boolean;
-  /** Existing ISO value to prefill from, if any. */
+  /** Existing ISO values to prefill from, if any. */
   value?: string;
-  onCommit: (iso: string) => void;
+  endValue?: string;
+  onCommit: (startIso: string, endIso?: string) => void;
   onClose: () => void;
 }) {
-  const { open, value, onCommit, onClose } = props;
+  const { open, value, endValue, onCommit, onClose } = props;
 
   const initial = useMemo(() => {
     const parsed = value ? new Date(value) : null;
@@ -49,9 +52,13 @@ export function DateTimePickerModal(props: {
   const [selected, setSelected] = useState<Date | null>(null);
   const [hour, setHour] = useState<number | null>(null);
   const [pm, setPm] = useState(false);
+  // Optional end of the window — same day as the selected start.
+  const [endSet, setEndSet] = useState(false);
+  const [endHour, setEndHour] = useState<number | null>(null);
+  const [endPm, setEndPm] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Re-seed from the committed draft value every time the modal opens.
+  // Re-seed from the committed draft values every time the modal opens.
   useEffect(() => {
     if (!open) return;
     const base = initial ?? new Date();
@@ -61,15 +68,25 @@ export function DateTimePickerModal(props: {
       setSelected(startOfDay(initial));
       const h24 = initial.getHours();
       setPm(h24 >= 12);
-      const h12 = h24 % 12 === 0 ? 12 : h24 % 12;
-      setHour(h12);
+      setHour(h24 % 12 === 0 ? 12 : h24 % 12);
     } else {
       setSelected(null);
       setHour(null);
       setPm(false);
     }
+    const endParsed = endValue ? new Date(endValue) : null;
+    const end = endParsed && !Number.isNaN(endParsed.getTime()) ? endParsed : null;
+    setEndSet(!!end);
+    if (end) {
+      const e24 = end.getHours();
+      setEndPm(e24 >= 12);
+      setEndHour(e24 % 12 === 0 ? 12 : e24 % 12);
+    } else {
+      setEndHour(null);
+      setEndPm(false);
+    }
     setError(null);
-  }, [open, initial]);
+  }, [open, initial, endValue]);
 
   useEffect(() => {
     if (!open) return;
@@ -120,7 +137,27 @@ export function DateTimePickerModal(props: {
       setError("The requested time must be in the future.");
       return;
     }
-    onCommit(picked.toISOString());
+    let endPicked: Date | undefined;
+    if (endSet) {
+      if (endHour === null) {
+        setError("Pick an end hour — or turn the end time off.");
+        return;
+      }
+      const e24 = (endHour % 12) + (endPm ? 12 : 0);
+      endPicked = new Date(
+        picked.getFullYear(),
+        picked.getMonth(),
+        picked.getDate(),
+        e24,
+        0,
+        0
+      );
+      if (endPicked.getTime() <= picked.getTime()) {
+        setError("The end time must be after the start time.");
+        return;
+      }
+    }
+    onCommit(picked.toISOString(), endPicked?.toISOString());
     onClose();
   }
 
@@ -238,6 +275,70 @@ export function DateTimePickerModal(props: {
             </button>
           </div>
 
+          <div className="dtm__endrow">
+            <span className="dtm__section-label">End time (optional)</span>
+            <button
+              type="button"
+              className="dtm__toggle"
+              role="switch"
+              aria-checked={endSet}
+              onClick={() => {
+                setEndSet((on) => {
+                  if (!on && endHour === null) {
+                    // Sensible default when first switched on: start + 1 h.
+                    const base = (hour ?? 9 % 12) + 1;
+                    setEndHour(((base % 12) + 12) % 12 || 12);
+                    setEndPm(pm);
+                  }
+                  return !on;
+                });
+                setError(null);
+              }}
+            >
+              {endSet ? "On" : "Off"}
+            </button>
+          </div>
+          {endSet ? (
+            <>
+              <div
+                className="dtm__slots"
+                role="group"
+                aria-label="End hour of day"
+              >
+                {SLOT_HOURS.map((h) => (
+                  <button
+                    type="button"
+                    key={`end-${h}`}
+                    className="dtm__slot"
+                    aria-pressed={endHour === h}
+                    onClick={() => {
+                      setEndHour(h);
+                      setError(null);
+                    }}
+                  >
+                    {h}:00
+                  </button>
+                ))}
+              </div>
+              <div className="dtm__ampm" role="group" aria-label="End AM or PM">
+                <button
+                  type="button"
+                  aria-pressed={!endPm}
+                  onClick={() => setEndPm(false)}
+                >
+                  AM
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={endPm}
+                  onClick={() => setEndPm(true)}
+                >
+                  PM
+                </button>
+              </div>
+            </>
+          ) : null}
+
           {error ? (
             <p className="dtm__error" role="alert">
               {error}
@@ -252,11 +353,14 @@ export function DateTimePickerModal(props: {
             >
               Cancel
             </button>
+            {/* Primary confirm — full-size (48px floor via mobile .btn rule),
+                bottom-right, saves BOTH ends of the window in one commit. */}
             <button
               type="button"
-              className="btn btn--sm"
+              className="btn dtm__ok"
               onClick={confirm}
               disabled={!selected || hour === null}
+              aria-label="Confirm date and time"
             >
               OK
             </button>
