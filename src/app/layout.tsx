@@ -29,11 +29,39 @@ export const metadata: Metadata = {
   ),
   title: {
     default: "Chrisviscus Technologies — Security, Networking & Support",
-    template: "%s · Chrisviscus Technologies",
+    template: "%s | Chrisviscus Technologies",
   },
   description:
     "Enterprise CCTV, networking hardware, and scheduled installation & support services for Nigerian homes, SMEs, and ISPs.",
-  icons: { icon: "/brand/chrisviscus-logo.png" },
+  // Icon set generated from the new wordmark: square mark crop with rounded
+  // corners (public/icon.png 512²) + multi-size favicon.ico; the legacy
+  // /brand path no longer appears in metadata.
+  icons: {
+    icon: ["/favicon.ico", "/icon.png"],
+    apple: "/icon.png",
+  },
+  openGraph: {
+    type: "website",
+    siteName: "Chrisviscus Technologies",
+    title: "Chrisviscus Technologies — Security, Networking & Support",
+    description:
+      "Enterprise CCTV, networking hardware, and scheduled installation & support services for Nigerian homes, SMEs, and ISPs.",
+    images: [
+      {
+        url: "/logo.png",
+        width: 1309,
+        height: 800,
+        alt: "Chrisviscus Technologies",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Chrisviscus Technologies — Security, Networking & Support",
+    description:
+      "Enterprise CCTV, networking hardware, and scheduled installation & support services for Nigerian homes, SMEs, and ISPs.",
+    images: ["/logo.png"],
+  },
 };
 
 export default async function RootLayout({

@@ -31,10 +31,10 @@ export default async function StorefrontHome() {
         </div>
         <div className="hero__logo" style={{ flex: "0 1 340px" }}>
           <Image
-            src="/brand/chrisviscus-logo.png"
+            src="/logo.png"
             alt="Chrisviscus Technologies"
-            width={344}
-            height={110}
+            width={1309}
+            height={800}
             priority
             unoptimized
             style={{ maxWidth: "100%", height: "auto" }}

@@ -779,7 +779,11 @@ a:hover { text-decoration: underline; }
 }
 /* Copyright-only footer (badge + currency chip removed on request) —
    the lone line centers instead of the old space-between layout. */
-.site-footer__inner { max-width: 1280px; margin: 0 auto; padding: 1rem; display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center; }
+.site-footer__inner { max-width: 1280px; margin: 0 auto; padding: 1rem; display: flex; flex-direction: column; align-items: center; gap: .45rem; justify-content: center; }
+/* Height-driven sizing + width:auto keeps the 1309:800 art undistorted at
+   every breakpoint (same rule the header logo uses). */
+.site-footer__logo { height: 30px; width: auto; max-width: 100%; display: block; }
+@media (max-width: 768px) { .site-footer__logo { height: 26px; } }
 
 /* ── Utilities ─────────────────────────────────────────────────────────── */
 .muted { color: var(--text-muted); }
@@ -895,6 +899,9 @@ a:hover { text-decoration: underline; }
 .mobile-nav > .row { justify-content: space-between; }
 
 /* Drawer utility row: currency + avatar left, Sign out far right. */
+/* Drawer branding header: new wordmark at the top of the panel. */
+.mobile-nav .mobile-nav__brand img { height: 30px; width: auto; display: block; }
+
 /* Utility row sits under a hairline so currency never crowds the profile
    card or the nav buttons. */
 .mobile-nav__util {
@@ -984,7 +991,7 @@ a:hover { text-decoration: underline; }
   .pagination { flex-wrap: wrap; }
   .checkout-grid { gap: .9rem; }
   .detail-grid { gap: .9rem; }
-  .site-footer__inner { flex-direction: column; align-items: center; text-align: center; }
+  .site-footer__inner { text-align: center; }
   .booking-done { padding: 1.25rem .75rem; }
 }
 

@@ -11,6 +11,8 @@
 // nothing in it stays focusable (no invisible-focus traps).
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AppModeSwitch } from "./AppModeSwitch";
 import { CurrencyPicker } from "./CurrencyPicker";
@@ -51,6 +53,15 @@ export function MobileNav() {
         aria-label="Mobile navigation"
         hidden={!open}
       >
+        <Link href="/" className="mobile-nav__brand" aria-label="Chrisviscus Technologies — home">
+          <Image
+            src="/logo.png"
+            alt="Chrisviscus Technologies"
+            width={1309}
+            height={800}
+            unoptimized
+          />
+        </Link>
         <AppModeSwitch />
         {/* Profile first — an explicit, labeled row, not a lone avatar. */}
         <MobileProfileRow />
