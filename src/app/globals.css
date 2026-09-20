@@ -106,8 +106,9 @@ a:hover { text-decoration: underline; }
 .brand-logo:hover { text-decoration: none; }
 /* Sizes now mean VISIBLE pixels: /logo-header.png is cropped to its alpha
    bbox (1106:167). Desktop 44px; width:auto + object-fit:contain keep the
-   ratio. The ≤380px guard below swaps to width-driven sizing so the ~6.6:1
-   wordmark can never push the cart/burger cluster out of a small phone. */
+   ratio, and the mobile media block drops the mark to the 1.6x (24px)
+   calibration — at that size the ~6.6:1 wordmark never crowds the small
+   phone's cart/burger cluster, so no width-driven guard is needed. */
 .brand-logo img { height: 44px; width: auto; max-width: 100%; object-fit: contain; display: block; }
 .brand-logo .brand-logo__mark { flex: none; }
 .brand-logo__word { display: flex; flex-direction: column; line-height: 1.05; }
@@ -156,12 +157,6 @@ a:hover { text-decoration: underline; }
 .chip--danger { color: #b91c1c; border-color: color-mix(in srgb, var(--color-warning) 45%, white); background: color-mix(in srgb, var(--color-warning) 8%, white); }
 /* Profile pill: the requested slate recipe (bg-slate-100 → slate-200,
    rounded-full, text-slate-800, py-1.5 px-3) with icon + caret slots. */
-/* ≤380px the 36px-tall mark (≈238px wide) would crowd the 44px controls;
-   let width drive and the aspect ratio shrinks the height instead. */
-@media (max-width: 380px) {
-  .brand-logo img { width: calc(100vw - 172px); height: auto; max-width: none; }
-}
-
 .usermenu-pill {
   display: inline-flex; align-items: center; gap: .375rem;
   padding: .375rem .75rem; border-radius: 999px;
@@ -932,7 +927,8 @@ a:hover { text-decoration: underline; }
 
 /* Drawer utility row: currency + avatar left, Sign out far right. */
 /* Drawer branding header: new wordmark at the top of the panel. */
-.mobile-nav .mobile-nav__brand img { height: 36px; width: auto; max-width: 100%; object-fit: contain; display: block; }
+/* Drawer mark follows the 1.6x mobile calibration exactly. */
+.mobile-nav .mobile-nav__brand img { height: 24px; width: auto; max-width: 100%; object-fit: contain; display: block; }
 
 /* Utility row sits under a hairline so currency never crowds the profile
    card or the nav buttons. */
@@ -969,10 +965,13 @@ a:hover { text-decoration: underline; }
   .site-header__mobile-actions { display: flex; }
   .mobile-nav-host { display: block; }
   .site-header__inner { gap: .5rem; padding: 0 .75rem; }
-  /* Mobile mark ≈ 2.5x its previous VISIBLE height (15px → 36px): the old
-     72px CSS box only rendered ~15px of art through transparent padding. */
+  /* 1.6x calibration over the BASE visible mark (15.03px at the old 72px
+     padded box → 24px here). The ≤380px width guard is gone: a 24px mark is
+     ~159px wide and never crowds the 44px cart/burger cluster, not even at
+     320px (159+44+44+gaps ≈ 275px). Bar stays 64px — flex-centered, no
+     clipping, zero layout shift. */
   :root { --header-height: 64px; }
-  .brand-logo img { height: 36px; }
+  .brand-logo img { height: 24px; }
 
   /* Touch targets: primary actions grow to 44px, compact ones to 40px. */
   .btn { min-height: 44px; padding-inline: 1.1rem; }
