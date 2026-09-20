@@ -175,20 +175,33 @@ a:hover { text-decoration: underline; }
 }
 
 .sidebar { position: sticky; top: calc(var(--header-height) + 1rem); }
-@media (max-width: 920px) { .sidebar { position: static; } }
 
 .sidebar__panel { padding: .25rem .75rem .75rem; }
-.sidebar section + section { border-top: 1px solid var(--border-subtle); }
-.sidebar h2 { margin: 0; font-size: .95rem; }
-.sidebar h2 button {
-  width: 100%; display: flex; justify-content: space-between; align-items: center;
-  background: none; border: 0; cursor: pointer;
-  padding: .8rem .25rem; font: inherit; font-weight: 700; color: var(--color-text);
+
+/* Sheet chrome is mobile-only: hidden while docked, revealed in the
+   ≤920px block. The scrim lives OUTSIDE the aside (sibling) so it can cover
+   the viewport while the aside animates in above it. */
+.filter-sheet__scrim, .filter-sheet__bar, .filter-sheet__footer { display: none; }
+
+/* Each filter section is a rounded card module: header row with a chevron
+   that rotates 90° when open, collapsible panel below. */
+.filter-card {
+  background: var(--color-app-bg);
+  border: 1px solid var(--border-subtle);
+  border-radius: .75rem;
+  margin: .55rem 0;
 }
-.sidebar h2 button .sidebar__glyph { color: var(--text-muted); font-weight: 500; }
-.sidebar__filters { display: flex; flex-direction: column; gap: .45rem; padding: .1rem .25rem .6rem; }
+.filter-card h3 { margin: 0; font-size: .92rem; }
+.filter-card h3 button {
+  width: 100%; display: flex; justify-content: space-between; align-items: center;
+  background: none; border: 0; cursor: pointer; text-align: left;
+  padding: .75rem .9rem; font: inherit; font-weight: 700; color: var(--color-text);
+}
+.sidebar__glyph { color: var(--text-muted); font-weight: 700; display: inline-block; transition: transform .18s ease; }
+.sidebar__glyph--open { transform: rotate(90deg); }
+
+.sidebar__filters { display: flex; flex-direction: column; gap: .45rem; padding: .1rem .9rem .75rem; }
 .sidebar__filters label { display: flex; gap: .5rem; align-items: center; font-size: .86rem; cursor: pointer; }
-.sidebar__filters .filter-group__title { font-size: .74rem; text-transform: uppercase; letter-spacing: .08em; color: var(--text-muted); font-weight: 700; margin-top: .4rem; }
 /* Min/Max in a constrained 2-col grid; Apply spans the full row. minmax(0,1fr)
    + width:100% keep the number inputs from growing past the sidebar column. */
 .sidebar__price-row {
@@ -200,21 +213,92 @@ a:hover { text-decoration: underline; }
 .sidebar__price-row .btn { grid-column: 1 / -1; justify-content: center; }
 .sidebar__actions { display: flex; justify-content: space-between; margin-top: .35rem; }
 
-/* Whole-panel "Filter Options" disclosure for the stacked sidebar. Desktop:
-   toggle hidden, body always visible (md:block equivalent). ≤920px (the
-   breakpoint where the sidebar stacks above the grid): toggle is a 44px
-   button and the body collapses behind it. */
-.filter-disclosure__toggle { display: none; }
+/* Stacked zone (≤920px, sheet mode): the panel is a bottom sheet — fixed,
+   rounded top corners, slide-up transform + scrim fade, body scroll-locked
+   by the component. Stays mounted (visibility, not display) so the
+   transition runs both directions; a closed sheet is unfocusable. */
 @media (max-width: 920px) {
-  .filter-disclosure__toggle {
-    display: flex; width: 100%; min-height: 44px;
-    align-items: center; justify-content: space-between;
-    background: none; border: 0; cursor: pointer;
-    padding: .75rem .25rem; font: inherit; font-weight: 700;
-    color: var(--color-text);
+  .sidebar {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 70;
+    display: flex; flex-direction: column;
+    min-height: 0; max-height: 88dvh;
+    padding: 0; border-radius: 1rem 1rem 0 0;
+    box-shadow: 0 -14px 44px rgba(15, 23, 42, .28);
+    transform: translateY(101%);
+    visibility: hidden;
+    transition: transform .28s ease, visibility 0s linear .28s;
   }
-  .filter-disclosure__body { display: none; }
-  .filter-disclosure[data-open="true"] .filter-disclosure__body { display: block; }
+  .sidebar[data-open="true"] {
+    transform: translateY(0);
+    visibility: visible;
+    transition: transform .28s ease;
+  }
+  .filter-sheet__scrim {
+    display: block;
+    position: fixed; inset: 0; z-index: 65;
+    background: rgba(15, 23, 42, .45);
+    opacity: 0; visibility: hidden;
+    transition: opacity .28s ease, visibility 0s linear .28s;
+    cursor: pointer;
+  }
+  .filter-sheet__scrim[data-open="true"] {
+    opacity: 1; visibility: visible;
+    transition: opacity .28s ease;
+  }
+  .filter-sheet__bar {
+    display: flex; align-items: center; justify-content: space-between; gap: .5rem;
+    position: sticky; top: 0; z-index: 2;
+    padding: .75rem 1rem;
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--border-subtle);
+    border-radius: 1rem 1rem 0 0;
+  }
+  .filter-sheet__bar h2 { margin: 0; font-size: 1.05rem; font-weight: 800; }
+  .filter-sheet__body {
+    flex: 1; min-height: 0; overflow-y: auto;
+    -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+    padding: .35rem .9rem .5rem;
+  }
+  .filter-sheet__footer {
+    display: flex; gap: .6rem;
+    position: sticky; bottom: 0; z-index: 2;
+    padding: .7rem 1rem calc(.7rem + env(safe-area-inset-bottom));
+    background: var(--color-surface);
+    border-top: 1px solid var(--border-subtle);
+  }
+  .filter-sheet__footer .btn { flex: 1; justify-content: center; min-height: 44px; }
+  /* Desktop-only reset affordances hide in sheet mode; the footer owns them. */
+  .sidebar__actions--docked { display: none; }
+}
+
+/* Docked presentation: the reset link rides under the last section. */
+.sidebar__actions--docked { display: flex; justify-content: flex-start; padding: 0 .25rem .5rem; }
+
+/* Products header strip: heading + item count left, filter pill right. */
+.products-header {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: .6rem; flex-wrap: wrap;
+}
+.products-header__meta { color: var(--text-muted); font-size: .85rem; font-weight: 600; margin-left: .35rem; }
+
+.filter-pill {
+  display: none; align-items: center; gap: .4rem;
+  min-height: 40px; padding: .35rem .95rem;
+  border-radius: 999px;
+  border: 1px solid var(--border-subtle);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card);
+  font-weight: 700; font-size: .85rem; color: var(--color-text);
+  cursor: pointer; white-space: nowrap;
+}
+.filter-pill--on { border-color: var(--color-primary); color: var(--color-primary); }
+.filter-pill__count {
+  min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px;
+  background: var(--color-primary); color: #fff;
+  font-size: .68rem; display: inline-flex; align-items: center; justify-content: center;
+}
+@media (max-width: 920px) {
+  .filter-pill { display: inline-flex; min-height: 44px; padding-inline: 1.1rem; }
 }
 
 /* ── Product grid / cards ───────────────────────────────────────────────── */
@@ -232,6 +316,15 @@ a:hover { text-decoration: underline; }
 .hero__copy { flex: 1 1 340px; }
 .hero__copy h1 { margin: 0 0 .35rem; font-size: clamp(1.5rem, 3.4vw, 2.2rem); }
 .hero__copy p { margin: 0 0 1rem; color: var(--text-muted); max-width: 46ch; }
+
+/* <=639px: hide the CTA banner + oversized brand image (their routes remain
+   one tap away in the header drawer) and condense the hero so the catalog
+   starts without a scroll of dead space. */
+@media (max-width: 639px) {
+  .hero { padding: .9rem 1rem; gap: .6rem; margin-bottom: .15rem; }
+  .hero__cta, .hero__logo { display: none; }
+  .hero__copy p { margin-bottom: .15rem; font-size: .92rem; }
+}
 
 /* Explicit responsive tiers (2 on phones, 3 from 640px, 4 from 1024px).
    minmax(0,…) keeps long product names inside their cell — no row-wide
@@ -252,22 +345,33 @@ a:hover { text-decoration: underline; }
   background: var(--color-app-bg); border-bottom: 1px solid var(--border-subtle);
   display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: .8rem;
 }
+.product-card__img { width: 100%; height: 100%; object-fit: contain; }
 .product-card__body { padding: .8rem; display: flex; flex-direction: column; gap: .45rem; flex: 1; }
-.product-card__name { font-weight: 700; font-size: .95rem; margin: 0; }
+.product-card__name { font-weight: 700; font-size: .95rem; margin: 0; overflow-wrap: break-word; min-width: 0; }
 .product-card__meta { display: flex; flex-wrap: wrap; gap: .35rem; }
 .product-card__price { font-size: 1.02rem; font-weight: 800; }
 .product-card__foot { margin-top: auto; display: flex; justify-content: space-between; align-items: center; gap: .5rem; }
 
-/* 2-up narrow cards: tighter type + stacked foot so nothing overlaps. */
+/* 2-up narrow cards: square-cover thumbs, .5rem padding, clamped titles —
+   two cards per row with nothing overflowing its column. */
 @media (max-width: 639px) {
   .product-grid { gap: .6rem; }
-  .product-card__body { padding: .55rem; gap: .3rem; }
-  .product-card__name { font-size: .78rem; line-height: 1.3; }
+  .product-card__thumb { aspect-ratio: 1 / 1; }
+  .product-card__img { object-fit: cover; }
+  .product-card__body { padding: .5rem; gap: .3rem; }
+  .product-card__name {
+    font-size: .78rem; line-height: 1.25;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
   .product-card__meta { gap: .25rem; }
   .product-card__meta .chip { font-size: .64rem; padding: .1rem .35rem; }
-  .product-card__price { font-size: .82rem; }
+  .product-card__price { font-size: .85rem; font-weight: 700; }
   .product-card__foot { flex-direction: column; align-items: stretch; gap: .35rem; }
-  .product-card__foot .btn--sm { min-height: 40px; font-size: .74rem; padding: .35rem .5rem; }
+  .product-card__foot .btn--sm {
+    min-height: 40px; font-size: .72rem; padding: .3rem .45rem;
+    white-space: nowrap; justify-content: center;
+  }
 }
 
 /* Add-to-cart feedback. On grid cards (.atc--floating) it is an overlay
@@ -472,6 +576,10 @@ a:hover { text-decoration: underline; }
   box-shadow: var(--shadow-card);
   padding: .85rem 1rem calc(.85rem + env(safe-area-inset-bottom));
 }
+/* Guard: the author `display:flex` above beats the UA `[hidden]` default, so
+   without this rule the drawer would be OPEN on first load at <=768px even
+   though MobileNav renders `hidden={!open}` with open=false. */
+.mobile-nav[hidden] { display: none; }
 .mobile-nav a {
   display: flex; align-items: center; min-height: 44px;
   color: var(--color-text); font-weight: 600; border-radius: .55rem;
@@ -483,6 +591,23 @@ a:hover { text-decoration: underline; }
 .mobile-nav .btn { justify-content: center; }
 .mobile-nav select { min-height: 44px; font-size: 16px; }
 .mobile-nav > .row { justify-content: space-between; }
+
+/* Drawer utility row: currency + avatar left, Sign out far right. */
+.mobile-nav__util { display: flex; align-items: center; gap: .5rem; }
+.usermenu--compact {
+  display: flex; align-items: center; gap: .4rem;
+  flex: 1; min-width: 0; justify-content: space-between;
+}
+.user-avatar {
+  width: 44px; height: 44px; flex: 0 0 auto;
+  border-radius: 50%;
+  border: 1px solid var(--border-subtle);
+  background: var(--color-app-bg); color: var(--color-text);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-weight: 700;
+}
+.user-avatar:hover { border-color: var(--color-primary); text-decoration: none; }
+.usermenu__signout { white-space: nowrap; margin-left: auto; }
 
 /* Offline-demo notice (root layout). */
 .demo-banner {

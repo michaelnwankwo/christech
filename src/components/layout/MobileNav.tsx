@@ -2,14 +2,15 @@
 
 // src/components/layout/MobileNav.tsx
 // ≤768px header entry point: a 44px hamburger that opens a full-width
-// slide-down panel carrying everything the desktop row hides (Shop/Services
-// links, mode switch, currency, user menu). The cart moved to the mobile
-// top bar (SiteHeader's .site-header__mobile-actions). Closes on navigation
-// and on Escape; the panel is `hidden` when closed so its links leave the
-// tab order (no invisible-focus traps).
+// slide-down panel carrying everything the desktop row hides. The redundant
+// standalone "Shop"/"Services" links are gone — the AppModeSwitch row IS the
+// domain navigation (Store → /products, Book → /services). Bottom utility
+// row: currency picker + profile avatar on the left, Sign out far right.
+// The cart lives in the mobile top bar (.site-header__mobile-actions).
+// Closes on navigation and on Escape; the panel is `hidden` when closed so
+// nothing in it stays focusable (no invisible-focus traps).
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AppModeSwitch } from "./AppModeSwitch";
 import { CurrencyPicker } from "./CurrencyPicker";
@@ -50,11 +51,11 @@ export function MobileNav() {
         aria-label="Mobile navigation"
         hidden={!open}
       >
-        <Link href="/products">Shop</Link>
-        <Link href="/services">Services</Link>
         <AppModeSwitch />
-        <CurrencyPicker />
-        <UserMenu />
+        <div className="mobile-nav__util">
+          <CurrencyPicker />
+          <UserMenu compact />
+        </div>
       </nav>
     </div>
   );

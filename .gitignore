@@ -6,3 +6,6 @@ coverage/
 .env.local
 *.tsbuildinfo
 next-env.d.ts
+
+# handoff patches are delivered outside the tree — keep them out of git
+*.patch

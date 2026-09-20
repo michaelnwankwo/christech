@@ -1,110 +1,205 @@
 "use client";
 
 // src/components/sidebar/ResponsiveSidebar.tsx
-// Blueprint §9.2 — independent accordion sections. Draft-2 corrections vs
-// the spec sketch (both are §19.4 test items):
-//   * the section BUTTON carries the id that aria-labelledby references
-//     (the sketch pointed at a heading with no id -> dangling label);
-//   * headings keep semantic structure while buttons carry state;
-//   * toggle state is per-section (independent open/close — REQUIRED),
-//     initialized per spec: catalog & brands open, activity collapsed.
+// Storefront filter panel — one component, two presentations:
+//   * ≥921px: docked accordion card beside the grid (unchanged contract);
+//   * ≤920px: a bottom sheet (rounded top corners, slide-up + scrim fade),
+//     "Filter" header bar with ✕, scrollable body of section cards, and a
+//     sticky footer (Clear all · Show results).
+// Open state lives in storefront-store `sidebarOpen` (§7.1) — the products
+// header's FilterPill owns the same flag. Body scroll locks while the sheet
+// is open (mobile only); Escape and scrim taps dismiss.
+//
+// Section order is FIXED by product spec: Category → Product Usage →
+// Availability → Supported Brands → Price Range (always last). The old
+// "Live Order Tracking & Recent Transactions" widgets were purged from the
+// storefront — realtime order UI belongs to /account only (the
+// useOrderRealtime hook stays for OrderTimeline).
 
-import { useState } from "react";
-import { CatalogAndUsageFilters } from "./CatalogAndUsageFilters";
-import { LiveOrderTracking, RecentTransactions } from "./OrderActivity";
+import { useEffect, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useStorefrontStore } from "@/stores/storefront-store";
+import {
+  AvailabilityFilter,
+  BRAND_OPTIONS,
+  BrandFilterList,
+  CategoryFilter,
+  PriceRangeFilter,
+  UsageFilter,
+  countActiveFilters,
+} from "./FilterSections";
 
-type SidebarSection = "catalog" | "brands" | "activity";
-
-const BRANDS = [
-  "Hikvision",
-  "Dahua",
-  "Cisco",
-  "MikroTik",
-  "Ubiquiti",
-  "Dintek",
-  "Cambium",
-] as const;
+type SheetSection = "category" | "usage" | "availability" | "brands" | "price";
 
 export function ResponsiveSidebar(props: {
   categories: string[];
   usageTags: string[];
 }) {
   const [openSections, setOpenSections] = useState<
-    Record<SidebarSection, boolean>
+    Record<SheetSection, boolean>
   >({
-    catalog: true,
+    category: true,
+    usage: true,
+    availability: true,
     brands: true,
-    activity: false,
+    price: true,
   });
 
-  // Whole-panel mobile disclosure ("Filter Options ▼/▲"). Default closed on
-  // mobile only — on desktop the CSS keeps the body visible regardless of
-  // this state and hides the toggle (md:block equivalent).
-  const [filtersOpen, setFiltersOpen] = useState(false);
+  const sidebarOpen = useStorefrontStore((s) => s.sidebarOpen);
+  const setSidebarOpen = useStorefrontStore((s) => s.setSidebarOpen);
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
-  function toggleSection(section: SidebarSection) {
+  // Collapse whenever the route changes (e.g. /products → /cart) so the
+  // sheet can never float onto unrelated pages. Query-param updates keep
+  // the same pathname, so applying filters inside the sheet keeps it open.
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [pathname, setSidebarOpen]);
+
+  // Scroll-lock the body while the sheet is open — mobile presentation only;
+  // the docked desktop sidebar must never freeze the page.
+  useEffect(() => {
+    if (!sidebarOpen || typeof document === "undefined") return;
+    if (!window.matchMedia("(max-width: 920px)").matches) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, [sidebarOpen]);
+
+  // Escape dismisses the sheet.
+  useEffect(() => {
+    if (!sidebarOpen) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setSidebarOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [sidebarOpen, setSidebarOpen]);
+
+  function toggleSection(section: SheetSection) {
     setOpenSections((current) => ({
       ...current,
       [section]: !current[section],
     }));
   }
 
+  const activeCount = countActiveFilters(searchParams);
+
   return (
-    <aside className="sidebar surface-card sidebar__panel" aria-label="Store filters and account activity">
+    <>
       <div
-        className="filter-disclosure"
-        data-open={filtersOpen ? "true" : "false"}
+        className="filter-sheet__scrim"
+        data-open={sidebarOpen ? "true" : "false"}
+        aria-hidden="true"
+        onClick={() => setSidebarOpen(false)}
+      />
+      <aside
+        className="sidebar surface-card sidebar__panel"
+        id="store-filters"
+        data-open={sidebarOpen ? "true" : "false"}
+        aria-label="Store filters"
       >
-        <button
-          type="button"
-          className="filter-disclosure__toggle"
-          aria-expanded={filtersOpen}
-          aria-controls="filter-disclosure-body"
-          onClick={() => setFiltersOpen((current) => !current)}
-        >
-          <span>Filter Options</span>
-          <span aria-hidden="true" className="sidebar__glyph">
-            {filtersOpen ? "▲" : "▼"}
-          </span>
-        </button>
-        <div className="filter-disclosure__body" id="filter-disclosure-body">
-        <SidebarSection
-          id="catalog"
-          title="Categories & Product Usage"
-          open={openSections.catalog}
-          onToggle={() => toggleSection("catalog")}
-        >
-          <CatalogAndUsageFilters
-            categories={props.categories}
-            usageTags={props.usageTags}
-          />
-        </SidebarSection>
-
-        <SidebarSection
-          id="brands"
-          title="Supported Brands"
-          open={openSections.brands}
-          onToggle={() => toggleSection("brands")}
-        >
-          <BrandFilters brands={BRANDS} />
-        </SidebarSection>
-
-        <SidebarSection
-          id="activity"
-          title="Live Order Tracking & Recent Transactions"
-          open={openSections.activity}
-          onToggle={() => toggleSection("activity")}
-        >
-            <LiveOrderTracking />
-            <RecentTransactions />
-          </SidebarSection>
+        <div className="filter-sheet__bar">
+          <h2>Filter</h2>
+          <button
+            type="button"
+            className="icon-btn"
+            aria-label="Close filters"
+            onClick={() => setSidebarOpen(false)}
+          >
+            <span aria-hidden="true">✕</span>
+          </button>
         </div>
-      </div>
-    </aside>
+
+        <div className="filter-sheet__body" id="filter-sheet-body">
+          <FilterSection
+            id="category"
+            title="Category"
+            open={openSections.category}
+            onToggle={() => toggleSection("category")}
+          >
+            <CategoryFilter categories={props.categories} />
+          </FilterSection>
+
+          <FilterSection
+            id="usage"
+            title="Product Usage"
+            open={openSections.usage}
+            onToggle={() => toggleSection("usage")}
+          >
+            <UsageFilter usageTags={props.usageTags} />
+          </FilterSection>
+
+          <FilterSection
+            id="availability"
+            title="Availability"
+            open={openSections.availability}
+            onToggle={() => toggleSection("availability")}
+          >
+            <AvailabilityFilter />
+          </FilterSection>
+
+          <FilterSection
+            id="brands"
+            title="Supported Brands"
+            open={openSections.brands}
+            onToggle={() => toggleSection("brands")}
+          >
+            <BrandFilterList brands={BRAND_OPTIONS} />
+          </FilterSection>
+
+          <FilterSection
+            id="price"
+            title="Price Range (NGN)"
+            open={openSections.price}
+            onToggle={() => toggleSection("price")}
+          >
+            <PriceRangeFilter />
+          </FilterSection>
+
+          <div className="sidebar__actions sidebar__actions--docked">
+            <button
+              type="button"
+              className="btn btn--ghost btn--sm"
+              onClick={() => router.push(pathname, { scroll: false })}
+            >
+              Reset all filters
+            </button>
+          </div>
+        </div>
+
+        <div className="filter-sheet__footer">
+          <button
+            type="button"
+            className="btn btn--secondary btn--sm"
+            disabled={activeCount === 0}
+            onClick={() => router.push(pathname, { scroll: false })}
+          >
+            Clear all
+          </button>
+          <button
+            type="button"
+            className="btn btn--sm"
+            onClick={() => setSidebarOpen(false)}
+          >
+            Show results{activeCount > 0 ? ` · ${activeCount}` : ""}
+          </button>
+        </div>
+      </aside>
+    </>
   );
 }
 
-function SidebarSection({
+/**
+ * One accordion card: header row with chevron (› rotates when open) and a
+ * collapsible panel. The BUTTON carries the aria-controls/labelledby ids —
+ * the §19.4 dangling-label fix from the original blueprint sketch is kept.
+ */
+function FilterSection({
   id,
   title,
   open,
@@ -117,12 +212,12 @@ function SidebarSection({
   onToggle: () => void;
   children: React.ReactNode;
 }) {
-  const panelId = `${id}-panel`;
-  const buttonId = `${id}-heading-button`;
+  const panelId = `filter-${id}-panel`;
+  const buttonId = `filter-${id}-button`;
 
   return (
-    <section>
-      <h2>
+    <section className="filter-card">
+      <h3>
         <button
           type="button"
           id={buttonId}
@@ -131,71 +226,18 @@ function SidebarSection({
           onClick={onToggle}
         >
           <span>{title}</span>
-          <span aria-hidden="true" className="sidebar__glyph">
-            {open ? "−" : "+"}
+          <span
+            aria-hidden="true"
+            className={`sidebar__glyph${open ? " sidebar__glyph--open" : ""}`}
+          >
+            ›
           </span>
         </button>
-      </h2>
+      </h3>
 
       <div id={panelId} role="region" aria-labelledby={buttonId} hidden={!open}>
         {children}
       </div>
     </section>
-  );
-}
-
-/**
- * Brand checkboxes write directly into URL query params (§9.2 mandate:
- * "Filters should use URL query parameters" — shareable, back-button safe).
- */
-function BrandFilters({ brands }: { brands: readonly string[] }) {
-  return (
-    <div className="sidebar__filters">
-      {brands.map((brand) => (
-        <BrandCheckbox key={brand} brand={brand} />
-      ))}
-    </div>
-  );
-}
-
-import { usePathname, useSearchParams, useRouter } from "next/navigation";
-import { useCallback } from "react";
-
-function BrandCheckbox({ brand }: { brand: string }) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-
-  const selected = (searchParams.get("brand") ?? "").split(",").filter(Boolean);
-  const checked = selected.includes(brand);
-
-  const apply = useCallback(
-    (next: string[]) => {
-      const params = new URLSearchParams(searchParams.toString());
-      if (next.length > 0) params.set("brand", next.join(","));
-      else params.delete("brand");
-      params.delete("page");
-      router.push(`${pathname}?${params.toString()}`, { scroll: false });
-    },
-    [pathname, router, searchParams]
-  );
-
-  return (
-    <label>
-      <input
-        type="checkbox"
-        name="brand"
-        value={brand}
-        checked={checked}
-        onChange={() =>
-          apply(
-            checked
-              ? selected.filter((b) => b !== brand)
-              : [...selected, brand]
-          )
-        }
-      />
-      <span>{brand}</span>
-    </label>
   );
 }
