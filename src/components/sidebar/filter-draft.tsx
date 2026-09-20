@@ -17,6 +17,7 @@ import {
   useEffect,
   useMemo,
   useState,
+  useTransition,
   type ReactNode,
 } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -39,6 +40,8 @@ type FilterDraftApi = {
   setPrice: (min: string, max: string) => void;
   clearDraft: () => void;
   commit: () => void;
+  /** True while a committed Apply navigation is still pending (RSC fetch). */
+  isCommitPending: boolean;
   activeCount: number;
   isEmpty: boolean;
 };
@@ -105,13 +108,19 @@ export function FilterDraftProvider({ children }: { children: ReactNode }) {
   );
   const clearDraft = useCallback(() => setDraft({ ...EMPTY_DRAFT }), []);
 
+  const [isCommitPending, startCommit] = useTransition();
+
   const commit = useCallback(() => {
     const qs = draftToQuery(draft).toString();
     const target = qs ? `${pathname}?${qs}` : pathname;
     const current = queryString ? `${pathname}?${queryString}` : pathname;
-    if (target !== current) router.push(target, { scroll: false });
+    if (target !== current) {
+      // Transition-wrapped: isCommitPending is true for exactly as long as
+      // the server render of the new query takes — no faked spinner.
+      startCommit(() => router.push(target, { scroll: false }));
+    }
     setSidebarOpen(false);
-  }, [draft, pathname, queryString, router, setSidebarOpen]);
+  }, [draft, pathname, queryString, router, setSidebarOpen, startCommit]);
 
   const value = useMemo<FilterDraftApi>(
     () => ({
@@ -123,6 +132,7 @@ export function FilterDraftProvider({ children }: { children: ReactNode }) {
       setPrice,
       clearDraft,
       commit,
+      isCommitPending,
       activeCount: countDraftFilters(draft),
       isEmpty: isDraftEmpty(draft),
     }),
@@ -135,6 +145,7 @@ export function FilterDraftProvider({ children }: { children: ReactNode }) {
       setPrice,
       clearDraft,
       commit,
+      isCommitPending,
     ]
   );
 

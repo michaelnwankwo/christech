@@ -18,6 +18,7 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useStorefrontStore } from "@/stores/storefront-store";
+import { BrandLoader } from "@/components/ui/BrandLoader";
 import {
   AvailabilityFilter,
   BrandFilterList,
@@ -63,7 +64,8 @@ function SidebarInner({
   const sidebarOpen = useStorefrontStore((s) => s.sidebarOpen);
   const setSidebarOpen = useStorefrontStore((s) => s.setSidebarOpen);
   const pathname = usePathname();
-  const { commit, clearDraft, isEmpty, activeCount } = useFilterDraft();
+  const { commit, clearDraft, isEmpty, activeCount, isCommitPending } =
+    useFilterDraft();
 
   // Collapse whenever the route changes (e.g. /products → /cart) so the
   // sheet can never float onto unrelated pages.
@@ -182,9 +184,21 @@ function SidebarInner({
           >
             Clear all
           </button>
-          <button type="button" className="btn btn--sm" onClick={commit}>
-            Apply
-            {activeCount > 0 ? ` · ${activeCount}` : ""}
+          <button
+            type="button"
+            className="btn btn--sm"
+            onClick={commit}
+            disabled={isCommitPending}
+            aria-busy={isCommitPending || undefined}
+          >
+            {isCommitPending ? (
+              <BrandLoader variant="inline" label="" />
+            ) : (
+              <>
+                Apply
+                {activeCount > 0 ? ` · ${activeCount}` : ""}
+              </>
+            )}
           </button>
         </div>
       </aside>

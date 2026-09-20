@@ -1,5 +1,7 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { ProductGrid } from "@/components/products/ProductGrid";
+import { BrandLoader } from "@/components/ui/BrandLoader";
 import { FilterPill } from "@/components/products/FilterPill";
 import { listProductCards } from "@/lib/catalog/queries";
 
@@ -65,7 +67,12 @@ export default async function ProductsPage({
         <FilterPill activeCount={activeCount} />
       </div>
 
-      <ProductGrid cards={result?.cards ?? []} />
+      {/* Suspense keeps this boundary independent of the route-level
+          loading.tsx: on streamed requests the branded skeleton grid paints
+          with the shell and swaps in place (same .product-grid tiers). */}
+      <Suspense fallback={<BrandLoader variant="skeleton" count={12} />}>
+        <ProductGrid cards={result?.cards ?? []} />
+      </Suspense>
 
       {result && result.totalCount !== null && result.totalCount > result.pageSize ? (
         <nav className="pagination" aria-label="Product pages">

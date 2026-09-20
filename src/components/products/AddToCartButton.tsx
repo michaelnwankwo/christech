@@ -9,9 +9,10 @@
 // rebuilds everything from productId/serviceId/quantity — the client id only
 // wires parents to children (§17.1).
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useTransition } from "react";
 import { useCartStore, type CartLine } from "@/stores/cart-store";
 import { useStorefrontStore } from "@/stores/storefront-store";
+import { BrandLoader } from "@/components/ui/BrandLoader";
 
 type Addon = {
   id: string;
@@ -45,6 +46,7 @@ export function AddToCartButton(props: {
   const addServiceAddon = useCartStore((s) => s.addServiceAddon);
   const openCart = useStorefrontStore((s) => s.openCart);
 
+  const [pending, startAdd] = useTransition();
   const [selectedAddons, setSelectedAddons] = useState<Set<string>>(new Set());
   const [feedback, setFeedback] = useState<string | null>(null);
 
@@ -154,10 +156,15 @@ export function AddToCartButton(props: {
       <button
         type="button"
         className="btn btn--sm"
-        disabled={props.product.disabled}
-        onClick={() => addToCart(1)}
+        disabled={props.product.disabled || pending}
+        onClick={() => startAdd(() => addToCart(1))}
+        aria-busy={pending || undefined}
       >
-        {props.product.disabled ? "Out of stock" : "Add to cart"}
+        {props.product.disabled
+          ? "Out of stock"
+          : pending
+            ? <BrandLoader variant="inline" label="Adding…" />
+            : "Add to cart"}
       </button>
       {feedback ? (
         <span role="status" className="atc__feedback">

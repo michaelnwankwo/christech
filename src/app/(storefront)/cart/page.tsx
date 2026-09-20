@@ -6,10 +6,11 @@
 // page can't diverge from the drawer behavior.
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useCartStore } from "@/stores/cart-store";
 import { CartLineItem } from "@/components/cart/CartLineItem";
 import { CartTotals } from "@/components/cart/CartTotals";
+import { BrandLoader } from "@/components/ui/BrandLoader";
 import { orderLinesForDisplay } from "@/components/cart/CartDrawer";
 
 export default function CartPage() {
@@ -17,6 +18,8 @@ export default function CartPage() {
   const removeLine = useCartStore((s) => s.removeLine);
   const updateQuantity = useCartStore((s) => s.updateQuantity);
   const clearCart = useCartStore((s) => s.clearCart);
+
+  const [clearPending, startClear] = useTransition();
 
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -30,8 +33,14 @@ export default function CartPage() {
           Shopping cart
         </h1>
         {lines.length > 0 ? (
-          <button type="button" className="btn btn--ghost btn--sm" onClick={clearCart}>
-            Empty cart
+          <button
+            type="button"
+            className="btn btn--ghost btn--sm"
+            onClick={() => startClear(clearCart)}
+            disabled={clearPending}
+            aria-busy={clearPending || undefined}
+          >
+            {clearPending ? <BrandLoader variant="inline" label="Clearing…" /> : "Empty cart"}
           </button>
         ) : null}
       </div>

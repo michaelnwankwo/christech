@@ -4,12 +4,20 @@
 // Blueprint §10.4 structure + CartTotals. Add-ons render NESTED under their
 // parent product (§10.3). Closing: scrim click + Escape (a11y).
 
-import { useEffect, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useState,
+  useTransition,
+  type MouseEvent,
+} from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCartStore } from "@/stores/cart-store";
 import { useStorefrontStore } from "@/stores/storefront-store";
 import { CartLineItem } from "./CartLineItem";
 import { CartTotals } from "./CartTotals";
+import { BrandLoader } from "@/components/ui/BrandLoader";
 
 export function CartDrawer() {
   const lines = useCartStore((state) => state.lines);
@@ -19,8 +27,28 @@ export function CartDrawer() {
   const open = useStorefrontStore((s) => s.cartOpen);
   const close = useStorefrontStore((s) => s.closeCart);
 
+  const router = useRouter();
+  // Checkout nav is a REAL server round-trip (the /checkout RSC payload);
+  // clearing the cart is a local store mutation. Both are wrapped the same
+  // way: the branded spinner is driven by React's own pending state, so the
+  // local one simply resolves within a frame instead of faking a delay.
+  const [navPending, startNav] = useTransition();
+  const [clearPending, startClear] = useTransition();
+
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
+
+  const goToCheckout = useCallback(
+    (event: MouseEvent<HTMLAnchorElement>) => {
+      if (!mounted || lines.length === 0) {
+        event.preventDefault();
+        return;
+      }
+      event.preventDefault();
+      startNav(() => router.push("/checkout"));
+    },
+    [mounted, lines.length, router, startNav]
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -83,10 +111,12 @@ export function CartDrawer() {
               <button
                 type="button"
                 className="btn btn--ghost btn--sm"
-                onClick={clearCart}
+                onClick={() => startClear(clearCart)}
                 aria-label="Remove all items from cart"
+                disabled={clearPending}
+                aria-busy={clearPending || undefined}
               >
-                Clear
+                {clearPending ? <BrandLoader variant="inline" label="" /> : "Clear"}
               </button>
             ) : null}
             <button
@@ -127,11 +157,10 @@ export function CartDrawer() {
             href="/checkout"
             className="btn cart-drawer__checkout"
             aria-disabled={mounted && lines.length > 0 ? undefined : true}
-            onClick={(event) => {
-              if (!mounted || lines.length === 0) event.preventDefault();
-            }}
+            onClick={goToCheckout}
+            aria-busy={navPending || undefined}
           >
-            Go to checkout
+            {navPending ? <BrandLoader variant="inline" label="Opening checkout…" /> : "Go to checkout"}
           </Link>
         </div>
       </aside>
