@@ -15,6 +15,7 @@ export function CartDrawer() {
   const lines = useCartStore((state) => state.lines);
   const removeLine = useCartStore((state) => state.removeLine);
   const updateQuantity = useCartStore((state) => state.updateQuantity);
+  const clearCart = useCartStore((state) => state.clearCart);
   const open = useStorefrontStore((s) => s.cartOpen);
   const close = useStorefrontStore((s) => s.closeCart);
 
@@ -30,8 +31,26 @@ export function CartDrawer() {
     return () => window.removeEventListener("keydown", onKey);
   }, [open, close]);
 
+  // Scroll-lock the page behind the sheet (same pattern as the filter
+  // sidebar) so scrolling inside the cart can never drag the page.
+  useEffect(() => {
+    if (!open) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, [open]);
+
   // Render ORDER: parents first, children directly beneath their parent.
   const ordered = mounted ? orderLinesForDisplay(lines) : [];
+  // Header count = units of PRODUCT lines; add-ons ride along with their
+  // parent line and would double-count if added here.
+  const itemCount = mounted
+    ? lines
+        .filter((line) => line.kind === "product")
+        .reduce((total, line) => total + line.quantity, 0)
+    : 0;
 
   return (
     <>
@@ -51,21 +70,43 @@ export function CartDrawer() {
         aria-hidden={!open}
       >
         <div className="cart-drawer__head">
-          <strong>Your cart</strong>
-          <button
-            type="button"
-            className="btn btn--ghost btn--sm"
-            onClick={close}
-            aria-label="Close cart"
-            tabIndex={open ? 0 : -1}
-          >
-            Close ✕
-          </button>
+          <div className="cart-drawer__head-title">
+            <strong>Your cart</strong>
+            {mounted && itemCount > 0 ? (
+              <span className="chip">
+                {itemCount} item{itemCount === 1 ? "" : "s"}
+              </span>
+            ) : null}
+          </div>
+          <div className="cart-drawer__head-actions">
+            {mounted && lines.length > 0 ? (
+              <button
+                type="button"
+                className="btn btn--ghost btn--sm"
+                onClick={clearCart}
+                aria-label="Remove all items from cart"
+              >
+                Clear
+              </button>
+            ) : null}
+            <button
+              type="button"
+              className="btn btn--ghost btn--sm"
+              onClick={close}
+              aria-label="Close cart"
+              tabIndex={open ? 0 : -1}
+            >
+              Close ✕
+            </button>
+          </div>
         </div>
 
         <div className="cart-drawer__body">
-          {!mounted || lines.length === 0 ? (
-            <p>Your cart is empty.</p>
+          {!mounted ? null : lines.length === 0 ? (
+            <p className="cart-drawer__empty">
+              Your cart is empty. Add something from the catalog and it will
+              show up here.
+            </p>
           ) : (
             ordered.map((line) => (
               <CartLineItem
@@ -84,7 +125,7 @@ export function CartDrawer() {
           <CartTotals />
           <Link
             href="/checkout"
-            className="btn"
+            className="btn cart-drawer__checkout"
             aria-disabled={mounted && lines.length > 0 ? undefined : true}
             onClick={(event) => {
               if (!mounted || lines.length === 0) event.preventDefault();

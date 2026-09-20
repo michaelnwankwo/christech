@@ -455,31 +455,47 @@ a:hover { text-decoration: underline; }
   border-left: 1px solid var(--border-subtle);
   box-shadow: var(--shadow-card);
   transform: translateX(100%);
-  transition: transform .18s ease;
+  transition: transform .24s cubic-bezier(.32, .72, .35, 1);
   display: flex; flex-direction: column;
 }
 .cart-drawer[data-open="true"] { transform: translateX(0); }
 .cart-drawer__head {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: .9rem 1rem; border-bottom: 1px solid var(--border-subtle);
+  display: flex; justify-content: space-between; align-items: center; gap: .75rem;
+  padding: 1.25rem 1rem; border-bottom: 1px solid var(--border-subtle);
+  flex: none;
 }
-.cart-drawer__body { overflow: auto; padding: .75rem 1rem; flex: 1; }
-.cart-drawer__foot { border-top: 1px solid var(--border-subtle); padding: .9rem 1rem; display: flex; flex-direction: column; gap: .55rem; }
+.cart-drawer__head-title { display: flex; align-items: center; gap: .5rem; min-width: 0; }
+.cart-drawer__head-actions { display: flex; align-items: center; gap: .25rem; flex: none; }
+.cart-drawer__body {
+  flex: 1; min-height: 0;                 /* min-height:0 = the flex child that scrolls */
+  overflow-y: auto; overscroll-behavior: contain; /* no scroll-chaining to the page */
+  padding: .85rem 1rem;
+}
+.cart-drawer__foot { border-top: 1px solid var(--border-subtle); padding: .9rem 1rem; display: flex; flex-direction: column; gap: .75rem; flex: none; }
+.cart-drawer__empty { text-align: center; color: var(--text-muted); padding: 2.5rem 1rem; }
 .cart-scrim { position: fixed; inset: 0; background: rgb(15 23 42 / .28); z-index: 55; border: 0; padding: 0; }
 @media (prefers-reduced-motion: reduce) { .cart-drawer { transition: none; } }
 
-.cart-line { display: flex; gap: .7rem; padding: .6rem 0; border-bottom: 1px dashed var(--border-subtle); }
+/* "Go to checkout" — primary CTA pinned in the foot (both layouts). */
+.cart-drawer__checkout.btn {
+  width: 100%; min-height: 48px;
+  padding: .75rem 1rem;                 /* px-4 py-3 */
+  border-radius: .5rem;                 /* 8px */
+  font-weight: 700; font-size: .95rem;
+}
+
+.cart-line { display: flex; gap: .7rem; padding: .65rem 0; border-bottom: 1px dashed var(--border-subtle); }
 .cart-line--child { margin-left: 1.15rem; border-left: 2px solid color-mix(in srgb, var(--color-primary) 35%, white); padding-left: .6rem; }
-.cart-line__main { flex: 1; min-width: 0; }
-.cart-line__name { font-weight: 600; font-size: .88rem; margin: 0 0 .15rem; }
+.cart-line__main { flex: 1; min-width: 0; line-height: 1.4; }
+.cart-line__name { font-weight: 600; font-size: .88rem; margin: 0 0 .2rem; line-height: 1.4; }
 .cart-line__price { color: var(--text-muted); font-size: .8rem; }
 .cart-line__controls { display: flex; align-items: center; gap: .4rem; margin-top: .35rem; }
 .qty-stepper { display: inline-flex; align-items: center; border: 1px solid var(--border-subtle); border-radius: .5rem; overflow: hidden; }
 .qty-stepper button { border: 0; background: var(--color-app-bg); width: 26px; height: 26px; cursor: pointer; font-weight: 700; }
 .qty-stepper span { min-width: 30px; text-align: center; font-size: .85rem; font-weight: 600; }
-.cart-totals { display: flex; flex-direction: column; gap: .3rem; font-size: .9rem; }
+.cart-totals { display: flex; flex-direction: column; gap: .75rem; font-size: .9rem; }
 .cart-totals .row { display: flex; justify-content: space-between; }
-.cart-totals .row--grand { font-weight: 800; font-size: 1rem; border-top: 1px solid var(--border-subtle); padding-top: .4rem; }
+.cart-totals .row--grand { font-weight: 800; font-size: 1rem; border-top: 1px solid var(--border-subtle); padding-top: .6rem; }
 
 .cart-badge-count {
   position: absolute; top: -6px; right: -8px;
@@ -684,14 +700,17 @@ a:hover { text-decoration: underline; }
      auto-fill from 1025px upward (replaces auto-fill's edge cases). */
   .product-grid, .service-grid { grid-template-columns: minmax(0, 1fr); }
 
-  /* The cart drawer becomes a full-width bottom sheet with safe margins. */
+  /* The cart drawer becomes a full-width bottom sheet with safe margins.
+     A real height (not just max-height) is what stops the sheet collapsing
+     to content size — the compression customers were seeing. */
   .cart-drawer {
     top: auto; left: 0; right: 0; bottom: 0; width: 100%;
-    max-height: 86dvh;
+    height: 68dvh;                        /* target: ~2/3 of the viewport */
+    min-height: 60dvh; max-height: 85dvh;
     transform: translateY(100%);
     border-left: 0;
     border-top: 1px solid var(--border-subtle);
-    border-radius: 1.1rem 1.1rem 0 0;
+    border-radius: 1rem 1rem 0 0;          /* 16px, native-sheet corners */
     box-shadow: 0 -18px 48px -12px rgb(15 23 42 / 0.28);
   }
   .cart-drawer[data-open="true"] { transform: translateY(0); }
