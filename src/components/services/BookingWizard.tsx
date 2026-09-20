@@ -16,7 +16,9 @@ import { useRouter } from "next/navigation";
 import { useBookingDraftStore, type BookingDraft } from "@/stores/booking-draft-store";
 import { useSession } from "@/components/providers/Providers";
 import { BookingSummary } from "./BookingSummary";
+import { DateTimePickerModal } from "./DateTimePickerModal";
 import { formatMinorMoney } from "@/lib/currency/money";
+import { BrandLoader } from "@/components/ui/BrandLoader";
 import type { SiteAddress } from "@/types/services";
 import type { ServiceVM } from "@/types/catalog";
 
@@ -186,7 +188,11 @@ export function BookingWizard(props: {
         ))}
       </ol>
 
-      <div className="wizard__panel surface-card">
+      <div
+        className={`wizard__panel surface-card${
+          step === 3 ? " wizard__panel--review" : ""
+        }`}
+      >
         {step === 0 ? (
           <ServiceStep services={props.services} draft={draft} update={update} />
         ) : null}
@@ -244,7 +250,14 @@ export function BookingWizard(props: {
               disabled={submitting || authLoading || !user}
               onClick={() => void submit()}
             >
-              {submitting ? "Submitting…" : "Submit booking request"}
+              {submitting ? (
+                <>
+                  <BrandLoader variant="inline" label="" />
+                  Submitting…
+                </>
+              ) : (
+                "Submit booking request"
+              )}
             </button>
           )}
         </div>
@@ -316,6 +329,9 @@ function ScheduleStep(props: {
   draft: BookingDraft;
   update: (patch: Partial<BookingDraft>) => void;
 }) {
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const start = props.draft.requestedStartAt;
+
   return (
     <div className="stack">
       <h2 style={{ margin: 0 }} className="page-title">
@@ -327,15 +343,32 @@ function ScheduleStep(props: {
       </p>
       <div className="form-grid">
         <div className="field">
-          <label htmlFor="start">Start</label>
-          <input
-            id="start"
-            type="datetime-local"
-            value={toLocalInput(props.draft.requestedStartAt)}
-            onChange={(e) =>
-              props.update({ requestedStartAt: fromLocalInput(e.target.value) })
-            }
-          />
+          <label htmlFor="start-picker">Start</label>
+          {/* Native <input type="datetime"> swapped for the branded modal:
+              day → hour → AM/PM → OK. Only OK writes the draft store. */}
+          <button
+            type="button"
+            id="start-picker"
+            className="btn btn--secondary"
+            style={{ justifyContent: "space-between", width: "100%" }}
+            onClick={() => setPickerOpen(true)}
+          >
+            {start ? (
+              <span className="dtm__trigger-value">{formatWhen(start)}</span>
+            ) : (
+              <span className="dtm__trigger-hint">Choose date &amp; time…</span>
+            )}
+            <span aria-hidden="true">▾</span>
+          </button>
+          {start ? (
+            <button
+              type="button"
+              className="btn btn--ghost btn--sm"
+              onClick={() => props.update({ requestedStartAt: undefined })}
+            >
+              Clear start time
+            </button>
+          ) : null}
         </div>
         <div className="field">
           <label htmlFor="end">End (optional)</label>
@@ -349,8 +382,22 @@ function ScheduleStep(props: {
           />
         </div>
       </div>
+
+      <DateTimePickerModal
+        open={pickerOpen}
+        value={start}
+        onCommit={(iso) => props.update({ requestedStartAt: iso })}
+        onClose={() => setPickerOpen(false)}
+      />
     </div>
   );
+}
+
+function formatWhen(iso: string): string {
+  return new Intl.DateTimeFormat("en-NG", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(iso));
 }
 
 function AddressStep(props: {

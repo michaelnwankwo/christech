@@ -613,6 +613,101 @@ a:hover { text-decoration: underline; }
 .wizard__step[aria-current="step"] { color: var(--color-primary); border-bottom-color: var(--color-primary); }
 .wizard__panel { padding: 1.1rem; display: flex; flex-direction: column; gap: .8rem; }
 .wizard__nav { display: flex; justify-content: space-between; }
+/* Review step (step 3): roomier card, and 1.5rem of clearance above the
+   Submit button. The wizard panel already contributes a .8rem flex-gap, so
+   the margin is the remainder — the visual total is exactly 1.5rem. */
+.wizard__panel.wizard__panel--review { padding: 1.25rem; }
+.wizard__panel--review .wizard__nav { margin-top: calc(1.5rem - .8rem); }
+
+.booking-summary {
+  display: grid; grid-template-columns: auto minmax(0, 1fr);
+  gap: 1.25rem 1rem; margin: 0;
+}
+.booking-summary dt { font-weight: 600; color: var(--color-text); }
+.booking-summary dd {
+  margin: 0; color: #475569;               /* slate-600 */
+  font-size: .875rem; line-height: 1.625;  /* text-sm + line-height-relaxed */
+  min-width: 0;
+}
+
+/* ── Date & time picker modal (booking schedule step) ─────────────────────
+   Selection is only committed to the draft store on "OK" — scrim click,
+   Cancel and Escape dismiss WITHOUT saving. */
+.dtm-scrim {
+  position: fixed; inset: 0; z-index: 85;
+  background: rgb(15 23 42 / .34);
+}
+.dtm {
+  position: fixed; inset: 0; z-index: 86;
+  display: grid; place-items: center; padding: 1rem;
+  pointer-events: none;                    /* only the dialog catches input */
+}
+.dtm__dialog {
+  pointer-events: auto;
+  width: min(380px, 100%); max-height: min(84dvh, 640px);
+  overflow: auto;
+  background: var(--color-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 1rem;
+  box-shadow: var(--shadow-card);
+  padding: 1rem;
+  display: flex; flex-direction: column; gap: .9rem;
+  transform: translateY(0); opacity: 1;
+  animation: dtm-in .22s cubic-bezier(.32, .72, .35, 1);
+}
+@keyframes dtm-in { from { transform: translateY(14px); opacity: 0; } }
+.dtm__head { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+.dtm__month { font-weight: 700; font-size: .95rem; }
+.dtm__navbtns { display: flex; gap: .3rem; }
+.dtm__navbtn {
+  border: 1px solid var(--border-subtle); background: var(--color-app-bg);
+  border-radius: .5rem; width: 32px; height: 32px; cursor: pointer; font-weight: 700;
+}
+.dtm__navbtn:disabled { opacity: .4; cursor: not-allowed; }
+.dtm__dow, .dtm__days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: .25rem; }
+.dtm__dow { font-size: .68rem; font-weight: 700; color: var(--text-muted); text-align: center; }
+.dtm__day {
+  min-height: 40px; border: 1px solid transparent; border-radius: .5rem;
+  background: transparent; cursor: pointer; font: inherit; font-size: .82rem;
+}
+.dtm__day:hover:not(:disabled):not([aria-pressed="true"]) { background: var(--color-app-bg); }
+.dtm__day:disabled { color: color-mix(in srgb, var(--text-muted) 45%, white); cursor: not-allowed; }
+.dtm__day[aria-pressed="true"] {
+  background: var(--color-primary); color: #fff; font-weight: 700;
+}
+.dtm__section-label { font-size: .74rem; font-weight: 700; color: var(--text-muted); letter-spacing: .04em; text-transform: uppercase; }
+.dtm__slots { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .4rem; }
+.dtm__slot {
+  border: 1px solid var(--border-subtle); border-radius: .5rem;
+  background: var(--color-surface); padding: .45rem .2rem; cursor: pointer;
+  font-size: .82rem; font: inherit; font-size: .8rem; text-align: center;
+}
+.dtm__slot[aria-pressed="true"] {
+  border-color: var(--color-primary); background: color-mix(in srgb, var(--color-primary) 8%, white);
+  font-weight: 700; color: var(--color-primary);
+}
+.dtm__ampm { display: grid; grid-template-columns: 1fr 1fr; gap: .35rem; }
+.dtm__ampm button {
+  border: 1px solid var(--border-subtle); border-radius: .5rem; background: var(--color-surface);
+  padding: .45rem; cursor: pointer; font-weight: 600; font-size: .84rem;
+}
+.dtm__ampm button[aria-pressed="true"] {
+  border-color: var(--color-primary); background: var(--color-primary); color: #fff;
+}
+.dtm__error { color: var(--color-warning); font-size: .8rem; margin: 0; }
+.dtm__actions { display: flex; justify-content: flex-end; gap: .5rem; padding-top: .2rem; }
+.dtm__trigger-value { font-weight: 600; color: var(--color-text); }
+.dtm__trigger-hint { color: var(--text-muted); font-style: italic; }
+@media (max-width: 768px) {
+  .dtm__dialog { width: 100%; max-height: 86dvh; border-radius: 1rem 1rem 0 0; align-self: end; }
+  .dtm { place-items: end stretch; }        /* native-sheet placement */
+  .dtm__day { min-height: 44px; }
+  .dtm__slot, .dtm__ampm button { min-height: 40px; }
+  .dtm__navbtn { width: 44px; height: 44px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dtm__dialog { animation: none; }
+}
 .booking-done { text-align: center; padding: 2rem 1rem; }
 .booking-done .request-number { font-size: 1.3rem; font-weight: 800; color: var(--color-paystack-ink); letter-spacing: .03em; }
 
@@ -638,7 +733,9 @@ a:hover { text-decoration: underline; }
   color: var(--text-muted);
   font-size: .82rem;
 }
-.site-footer__inner { max-width: 1280px; margin: 0 auto; padding: 1rem; display: flex; flex-wrap: wrap; gap: 1rem; justify-content: space-between; }
+/* Copyright-only footer (badge + currency chip removed on request) —
+   the lone line centers instead of the old space-between layout. */
+.site-footer__inner { max-width: 1280px; margin: 0 auto; padding: 1rem; display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center; }
 
 /* ── Utilities ─────────────────────────────────────────────────────────── */
 .muted { color: var(--text-muted); }

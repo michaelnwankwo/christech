@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ServiceVM } from "@/types/catalog";
 import { formatMinorMoney } from "@/lib/currency/money";
+import { BookingCtaButton } from "./BookingCtaButton";
 
 // src/components/services/ServiceCard.tsx
 // §11.3: duration + scheduling requirements are shown; status is never
@@ -30,12 +31,7 @@ export function ServiceCard({ service }: { service: ServiceVM }) {
         <strong className="mono">
           From {formatMinorMoney(service.basePriceMinor, "NGN")}
         </strong>
-        <Link
-          className="btn btn--sm"
-          href={`/booking?service=${service.slug}`}
-        >
-          Request booking
-        </Link>
+        <BookingCtaButton slug={service.slug} />
       </div>
     </article>
   );

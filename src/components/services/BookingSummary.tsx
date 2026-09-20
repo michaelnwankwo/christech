@@ -11,27 +11,21 @@ export function BookingSummary({ service }: { service: ServiceVM | null }) {
   const draft = useBookingDraftStore((s) => s.draft);
 
   return (
-    <dl
-      style={{
-        display: "grid",
-        gridTemplateColumns: "auto 1fr",
-        gap: ".35rem .9rem",
-        margin: 0,
-        fontSize: ".92rem",
-      }}
-    >
-      <dt className="muted">Service</dt>
-      <dd style={{ margin: 0 }}>{service?.name ?? "—"}</dd>
+    // Layout + type live in globals.css (.booking-summary): 1.25rem field
+    // gaps, semibold slate-900 labels, slate-600 relaxed values.
+    <dl className="booking-summary">
+      <dt>Service</dt>
+      <dd>{service?.name ?? "—"}</dd>
 
-      <dt className="muted">Indicative price</dt>
-      <dd style={{ margin: 0 }} className="mono">
+      <dt>Indicative price</dt>
+      <dd className="mono">
         {service
           ? `${formatMinorMoney(service.basePriceMinor, "NGN")} (final quote by staff)`
           : "—"}
       </dd>
 
-      <dt className="muted">Window</dt>
-      <dd style={{ margin: 0 }}>
+      <dt>Time window</dt>
+      <dd>
         {draft.requestedStartAt
           ? `${formatWhen(draft.requestedStartAt)}${
               draft.requestedEndAt ? ` → ${formatWhen(draft.requestedEndAt)}` : ""
@@ -39,8 +33,8 @@ export function BookingSummary({ service }: { service: ServiceVM | null }) {
           : "Flexible"}
       </dd>
 
-      <dt className="muted">Site</dt>
-      <dd style={{ margin: 0 }}>
+      <dt>Location</dt>
+      <dd>
         {draft.siteAddress
           ? `${draft.siteAddress.addressLine1}, ${draft.siteAddress.city}, ${draft.siteAddress.state}`
           : "—"}
@@ -48,8 +42,8 @@ export function BookingSummary({ service }: { service: ServiceVM | null }) {
 
       {draft.notes ? (
         <>
-          <dt className="muted">Notes</dt>
-          <dd style={{ margin: 0, whiteSpace: "pre-wrap" }}>{draft.notes}</dd>
+          <dt>Notes</dt>
+          <dd style={{ whiteSpace: "pre-wrap" }}>{draft.notes}</dd>
         </>
       ) : null}
     </dl>
