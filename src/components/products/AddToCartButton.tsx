@@ -155,7 +155,9 @@ export function AddToCartButton(props: {
 
       <button
         type="button"
-        className="btn btn--sm"
+        className={
+          props.withAddonPicker ? "btn btn--block atc__cta" : "btn btn--sm"
+        }
         disabled={props.product.disabled || pending}
         onClick={() => startAdd(() => addToCart(1))}
         aria-busy={pending || undefined}

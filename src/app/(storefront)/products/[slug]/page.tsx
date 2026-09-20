@@ -18,12 +18,25 @@ export default async function ProductPage({
   if (!product) notFound();
 
   return (
-    <>
-      <p style={{ margin: 0 }}>
-        <Link href="/products" className="muted">
-          ← All products
+    <div className="detail-page">
+      <nav className="detail-crumbs" aria-label="Breadcrumb">
+        <Link href="/products">
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M15 18l-6-6 6-6" />
+          </svg>
+          All products
         </Link>
-      </p>
+      </nav>
 
       <div className="detail-grid">
         <section className="detail-media surface-card" aria-label="Product media">
@@ -31,7 +44,13 @@ export default async function ProductPage({
             // eslint-disable-next-line @next/next/no-img-element
             <img src={product.imageUrls[0]} alt={product.name} />
           ) : (
-            <span className="muted">{product.brand} · {product.sku}</span>
+            // No photo in the catalog row: a composed badge beats raw
+            // brand/SKU text stretched across an empty box.
+            <span className="detail-media__ph">
+              <b>{product.brand}</b>
+              <span className="mono">{product.sku}</span>
+              <span>Photo coming soon</span>
+            </span>
           )}
         </section>
 
@@ -47,14 +66,10 @@ export default async function ProductPage({
               ))}
             </div>
 
-            <h1 className="page-title" style={{ margin: 0 }}>
-              {product.name}
-            </h1>
-            <p className="muted" style={{ margin: 0, fontSize: ".85rem" }}>
-              SKU {product.sku}
-            </p>
+            <h1 className="detail-title">{product.name}</h1>
+            <span className="sku-chip mono">SKU · {product.sku}</span>
 
-            <div className="row" style={{ justifyContent: "space-between" }}>
+            <div className="detail-price-row">
               <CurrencyPrice amountMinor={product.unitPriceMinor} />
               {product.inventoryQty > 0 ? (
                 <span className="chip chip--success">
@@ -80,19 +95,19 @@ export default async function ProductPage({
               addons={product.availableAddons}
             />
 
-            <p className="muted" style={{ margin: 0, fontSize: ".78rem" }}>
+            <p className="detail-fine">
               Add-on services attach to the product line in your cart. Shipping
               ({product.shippingClass} class) is quoted server-side after you
               enter an address. Need an engineer instead?{" "}
               <Link href="/services">Book a service</Link> — bookings stay
               separate from orders.
             </p>
-            <span className="muted" style={{ fontSize: ".75rem" }}>
+            <span className="detail-baseprice">
               Base price {formatMinorMoney(product.unitPriceMinor, "NGN")}
             </span>
           </div>
         </section>
       </div>
-    </>
+    </div>
   );
 }

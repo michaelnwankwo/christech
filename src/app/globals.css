@@ -161,6 +161,15 @@ a:hover { text-decoration: underline; }
 .btn--ghost { background: transparent; border-color: transparent; color: var(--color-primary); }
 .btn--danger { background: var(--color-warning); border-color: var(--color-warning); color: #fff; }
 .btn--sm { padding: .3rem .65rem; font-size: .8rem; }
+.btn--block { width: 100%; }
+/* Detail-page add-to-cart: full-width, tall tap target, lifted shadow,
+   0.99 press. Card-grid quick-add deliberately keeps the compact .btn--sm. */
+.atc__cta {
+  padding: .85rem 1.1rem; border-radius: .8rem; font-size: 1rem; font-weight: 600;
+  box-shadow: 0 6px 16px -6px rgb(37 99 235 / .45);
+  transition: filter .12s ease, box-shadow .12s ease, transform .06s ease;
+}
+.atc__cta:active:not(:disabled) { transform: scale(.99); }
 
 .chip {
   display: inline-flex; align-items: center; gap: .3rem;
@@ -211,10 +220,13 @@ a:hover { text-decoration: underline; }
 
 /* ── Storefront layout: sidebar + content ───────────────────────────────── */
 .storefront-grid {
-  max-width: 1280px; margin: 0 auto; padding: 1rem;
+  max-width: 1280px; margin: 0 auto;
+  padding: 1.5rem 1rem;              /* ~px-4 py-6 */
   display: grid; grid-template-columns: 300px minmax(0, 1fr);
   gap: 1.25rem; align-items: start;
 }
+@media (min-width: 640px) {  .storefront-grid { padding: 2rem 1.5rem; } }    /* ~sm:px-6 sm:py-8 */
+@media (min-width: 1024px) { .storefront-grid { padding: 2.5rem 2rem; } }    /* ~lg:px-8 lg:py-10 */
 @media (max-width: 920px) {
   .storefront-grid { grid-template-columns: 1fr; }
 }
@@ -478,19 +490,81 @@ a:hover { text-decoration: underline; }
 .pagination { display: flex; gap: .5rem; justify-content: center; align-items: center; padding: .5rem 0 1rem; }
 
 /* ── Product detail ─────────────────────────────────────────────────────── */
+.detail-page { display: flex; flex-direction: column; gap: 1.5rem; }
+@media (min-width: 640px) { .detail-page { gap: 1.75rem; } }
+
+/* Breadcrumb: small-caps muted row with its own chevron, never a stray
+   sentence above the card. */
+.detail-crumbs a {
+  display: inline-flex; align-items: center; gap: .375rem;
+  font-size: .75rem; font-weight: 500; color: #64748b;
+  transition: color .15s ease;
+}
+.detail-crumbs a:hover { color: #1e293b; text-decoration: none; }
+
 .detail-grid { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 4fr); gap: 1.25rem; }
 @media (max-width: 920px) { .detail-grid { grid-template-columns: 1fr; } }
-.detail-media { padding: 1rem; min-height: 260px; display: flex; align-items: center; justify-content: center; }
-.detail-media img { max-width: 100%; }
-.detail-buy { padding: 1.1rem; display: flex; flex-direction: column; gap: .7rem; }
+.detail-media {
+  /* 4:3 plate instead of the collapsible strip: with no photo the box used
+     to shrink to a text line; now the aspect holds regardless of content. */
+  aspect-ratio: 4 / 3; min-height: 220px; max-height: 460px;
+  padding: 1.5rem; display: flex; align-items: center; justify-content: center;
+  background: #f8fafc; border: 1px solid #eef2f7; border-radius: 1rem;
+  box-shadow: var(--shadow-card); overflow: hidden;
+}
+.detail-media img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.detail-media__ph {
+  display: inline-flex; flex-direction: column; align-items: center; gap: .45rem;
+  padding: .9rem 1.5rem; text-align: center;
+  background: var(--color-surface); border: 1px solid var(--border-subtle);
+  border-radius: .85rem; box-shadow: var(--shadow-card);
+  font-size: .78rem; color: var(--text-muted);
+}
+.detail-media__ph b { color: var(--color-text); font-weight: 700; font-size: .95rem; letter-spacing: -.01em; }
+.detail-media__ph span:nth-child(2) {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .72rem;
+  background: #f1f5f9; border-radius: .35rem; padding: .15rem .5rem;
+}
+.detail-buy { padding: 1.25rem; display: flex; flex-direction: column; gap: .9rem; }
+.detail-title {
+  margin: 0; font-size: 1.3rem; font-weight: 800;
+  letter-spacing: -.015em; line-height: 1.22;
+}
+@media (min-width: 640px) { .detail-title { font-size: 1.55rem; } }
+.sku-chip {
+  align-self: flex-start; display: inline-block;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: .72rem; font-weight: 500; color: #64748b;
+  background: #f1f5f9; padding: .3rem .62rem; border-radius: .42rem;
+}
+.detail-price-row {
+  display: flex; align-items: center; justify-content: space-between; gap: .75rem;
+  padding-block: .65rem; margin-block: .1rem .35rem;
+  border-block: 1px solid #eef2f7;
+}
+.detail-price-row .product-card__price {
+  font-size: 1.5rem; font-weight: 800; letter-spacing: -.01em; color: var(--color-text);
+}
+.detail-fine { margin: 0; font-size: .76rem; line-height: 1.65; color: var(--text-muted); margin-top: .4rem; }
+.detail-baseprice { font-size: .72rem; color: var(--text-muted); }
 .addon-list { display: flex; flex-direction: column; gap: .4rem; }
 .addon-list label {
-  display: flex; justify-content: space-between; gap: .6rem; align-items: center;
-  border: 1px solid var(--border-subtle); border-radius: .55rem; padding: .45rem .6rem;
-  font-size: .85rem; cursor: pointer;
+  /* Full-width tappable cards (≥52px) instead of squished rows. */
+  display: flex; justify-content: space-between; align-items: center; gap: .75rem;
+  min-height: 52px; padding: .85rem .9rem;
+  border: 1px solid #e2e8f0; border-radius: .85rem;
+  background: var(--color-surface); box-shadow: 0 1px 2px rgb(15 23 42 / .05);
+  font-size: .9rem; cursor: pointer;
+  transition: border-color .15s ease, background-color .15s ease, box-shadow .15s ease;
 }
 .addon-list label:hover { border-color: var(--color-primary); }
-.addon-price { color: var(--text-muted); white-space: nowrap; }
+.addon-list label:has(input:checked) {
+  border-color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 4%, white);
+  box-shadow: 0 1px 3px rgb(37 99 235 / .18);
+}
+.addon-list input { width: 1.05rem; height: 1.05rem; flex: none; accent-color: var(--color-primary); }
+.addon-price { color: #334155; font-weight: 600; font-size: .85rem; white-space: nowrap; flex: none; }
 
 /* ── Cart (drawer + page) ───────────────────────────────────────────────── */
 .cart-drawer {
@@ -1044,11 +1118,12 @@ a:hover { text-decoration: underline; }
   .form-grid .span-2 { grid-column: span 1; }
   .wizard__steps { flex-wrap: wrap; }
   .wizard__step { flex: 1 1 46%; }
-  .wizard__panel, .checkout-panel, .detail-buy, .service-hero { padding: .95rem; }
+  .wizard__panel, .checkout-panel, .service-hero { padding: .95rem; }
+  .detail-buy { padding: 1.15rem; }
 
   .pagination { flex-wrap: wrap; }
   .checkout-grid { gap: .9rem; }
-  .detail-grid { gap: .9rem; }
+  .detail-grid { gap: 1.5rem; }
   .site-footer__inner { text-align: center; }
   .booking-done { padding: 1.25rem .75rem; }
 }
