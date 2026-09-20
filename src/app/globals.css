@@ -27,7 +27,9 @@
 
   --radius-card: 0.875rem;
   --shadow-card: 0 1px 2px rgb(15 23 42 / 0.06), 0 8px 24px -12px rgb(15 23 42 / 0.12);
-  --header-height: 64px;
+  /* Sized for the 2.4x logo (91px img) + breathing room; sticky sidebar and
+     the drawer's top:100% both key off this variable automatically. */
+  --header-height: 112px;
 }
 
 html,
@@ -101,7 +103,9 @@ a:hover { text-decoration: underline; }
 .site-header__mobile-actions .cart-badge-count { top: -4px; right: -4px; }
 .brand-logo { display: inline-flex; align-items: center; gap: .5rem; color: var(--color-text); }
 .brand-logo:hover { text-decoration: none; }
-.brand-logo img { height: 38px; width: auto; display: block; }
+/* 2.4x per branding request (was 38px). width:auto + object-fit:contain
+   guarantee the 1309:800 art never stretches at any breakpoint. */
+.brand-logo img { height: 91px; width: auto; max-width: 100%; object-fit: contain; display: block; }
 .brand-logo .brand-logo__mark { flex: none; }
 .brand-logo__word { display: flex; flex-direction: column; line-height: 1.05; }
 .brand-logo__word b { font-size: 1rem; letter-spacing: .01em; font-weight: 800; }
@@ -147,6 +151,27 @@ a:hover { text-decoration: underline; }
 }
 .chip--success { color: #15803d; border-color: color-mix(in srgb, var(--color-success) 45%, white); background: color-mix(in srgb, var(--color-success) 8%, white); }
 .chip--danger { color: #b91c1c; border-color: color-mix(in srgb, var(--color-warning) 45%, white); background: color-mix(in srgb, var(--color-warning) 8%, white); }
+/* Profile pill: the requested slate recipe (bg-slate-100 → slate-200,
+   rounded-full, text-slate-800, py-1.5 px-3) with icon + caret slots. */
+.usermenu-pill {
+  display: inline-flex; align-items: center; gap: .375rem;
+  padding: .375rem .75rem; border-radius: 999px;
+  background: #f1f5f9; color: #1e293b;
+  font-size: .875rem; font-weight: 500; line-height: 1.25;
+  border: 1px solid transparent;
+  transition: background-color .15s ease, border-color .15s ease, color .15s ease;
+  cursor: pointer; max-width: 260px;
+}
+.usermenu-pill:hover { background: #e2e8f0; border-color: var(--border-subtle); color: #0f172a; text-decoration: none; }
+.usermenu-pill > svg:first-child { color: #334155; flex: none; }
+.usermenu-pill__name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.usermenu-pill__role {
+  font-size: .7rem; font-weight: 700; color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 10%, white);
+  border-radius: 999px; padding: .1rem .45rem; flex: none;
+}
+.usermenu-pill__caret { color: #64748b; flex: none; margin-left: .15rem; }
+
 .chip--accent { color: var(--color-paystack-ink); border-color: color-mix(in srgb, var(--color-paystack-ink) 35%, white); background: color-mix(in srgb, var(--color-paystack-ink) 6%, white); }
 .chip--primary { color: var(--color-primary); border-color: color-mix(in srgb, var(--color-primary) 35%, white); background: color-mix(in srgb, var(--color-primary) 8%, white); }
 
@@ -782,8 +807,9 @@ a:hover { text-decoration: underline; }
 .site-footer__inner { max-width: 1280px; margin: 0 auto; padding: 1rem; display: flex; flex-direction: column; align-items: center; gap: .45rem; justify-content: center; }
 /* Height-driven sizing + width:auto keeps the 1309:800 art undistorted at
    every breakpoint (same rule the header logo uses). */
-.site-footer__logo { height: 30px; width: auto; max-width: 100%; display: block; }
-@media (max-width: 768px) { .site-footer__logo { height: 26px; } }
+/* Footer + drawer marks scaled 2.4x with the header (30→72 / 26→62). */
+.site-footer__logo { height: 72px; width: auto; max-width: 100%; object-fit: contain; display: block; }
+@media (max-width: 768px) { .site-footer__logo { height: 62px; } }
 
 /* ── Utilities ─────────────────────────────────────────────────────────── */
 .muted { color: var(--text-muted); }
@@ -900,7 +926,7 @@ a:hover { text-decoration: underline; }
 
 /* Drawer utility row: currency + avatar left, Sign out far right. */
 /* Drawer branding header: new wordmark at the top of the panel. */
-.mobile-nav .mobile-nav__brand img { height: 30px; width: auto; display: block; }
+.mobile-nav .mobile-nav__brand img { height: 72px; width: auto; max-width: 100%; object-fit: contain; display: block; }
 
 /* Utility row sits under a hairline so currency never crowds the profile
    card or the nav buttons. */
@@ -911,10 +937,6 @@ a:hover { text-decoration: underline; }
 }
 .mobile-nav__util .chip { line-height: 1.4; }
 .mobile-nav__signout { line-height: 1.4; margin-left: .5rem; }
-.usermenu--compact {
-  display: flex; align-items: center; gap: .4rem;
-  flex: 1; min-width: 0; justify-content: space-between;
-}
 .user-avatar {
   width: 44px; height: 44px; flex: 0 0 auto;
   border-radius: 50%;
@@ -924,7 +946,6 @@ a:hover { text-decoration: underline; }
   font-weight: 700;
 }
 .user-avatar:hover { border-color: var(--color-primary); text-decoration: none; }
-.usermenu__signout { white-space: nowrap; margin-left: auto; }
 
 /* Offline-demo notice (root layout). */
 .demo-banner {
@@ -942,7 +963,9 @@ a:hover { text-decoration: underline; }
   .site-header__mobile-actions { display: flex; }
   .mobile-nav-host { display: block; }
   .site-header__inner { gap: .5rem; padding: 0 .75rem; }
-  .brand-logo img { height: 30px; }
+  /* Bar shrinks to fit the 72px mobile mark (was 30px in a 64px bar). */
+  :root { --header-height: 92px; }
+  .brand-logo img { height: 72px; }
 
   /* Touch targets: primary actions grow to 44px, compact ones to 40px. */
   .btn { min-height: 44px; padding-inline: 1.1rem; }

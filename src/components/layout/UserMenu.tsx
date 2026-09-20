@@ -5,18 +5,52 @@
 // and links to the account area. Role changes are never offered here — by
 // policy AND by database trigger the browser could not perform one anyway.
 //
-// The mobile drawer's account entry moved to MobileProfileRow (a labeled
-// row, not a lone avatar) — this component is now the desktop header chip.
+// Desktop renders the profile PILL (avatar icon + display name + caret) that
+// replaced the old "Demo Shopper" text chip; the mobile drawer's account
+// entry is MobileProfileRow below. The stale `compact` branch is deleted —
+// MobileNav has not used it since the drawer gained its labeled row.
 
 import Link from "next/link";
 import { useSession } from "@/components/providers/Providers";
 
-/**
- * MobileProfileRow — the drawer's account entry: icon + explicit "My
- * profile" text (→ /account) instead of the old unlabeled avatar badge.
- * Signed-out visitors get the same row inviting them to sign in. Sign out
- * stays available as the trailing ghost action.
- */
+function UserIcon() {
+  return (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="8" r="3.5" />
+      <path d="M5 19.5a7 7 0 0 1 14 0" />
+    </svg>
+  );
+}
+
+function CaretDown() {
+  return (
+    <svg
+      className="usermenu-pill__caret"
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.4"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M6 9l6 6 6-6" />
+    </svg>
+  );
+}
+
 export function MobileProfileRow() {
   const { user, profile, loading, signOut } = useSession();
 
@@ -68,54 +102,20 @@ export function MobileProfileRow() {
   );
 }
 
-export function UserMenu({ compact = false }: { compact?: boolean }) {
+export function UserMenu() {
   const { user, profile, loading, signOut } = useSession();
 
   if (loading) {
     return <span className="chip" aria-busy="true">…</span>;
   }
 
-  if (compact) {
-    if (!user) {
-      return (
-        <span className="usermenu usermenu--compact">
-          <Link className="btn btn--ghost btn--sm" href="/login">
-            Sign in
-          </Link>
-          <Link className="btn btn--sm" href="/signup">
-            Create account
-          </Link>
-        </span>
-      );
-    }
-    const label =
-      profile?.full_name?.trim() || user.email?.split("@")[0] || "Account";
-    return (
-      <span className="usermenu usermenu--compact">
-        <Link
-          className="user-avatar"
-          href="/account"
-          aria-label={`Account — ${label}`}
-          title={label}
-        >
-          {initialOf(label)}
-        </Link>
-        <button
-          type="button"
-          className="btn btn--ghost btn--sm usermenu__signout"
-          onClick={() => void signOut()}
-        >
-          Sign out
-        </button>
-      </span>
-    );
-  }
-
   if (!user) {
     return (
       <span className="row" style={{ gap: ".4rem" }}>
-        <Link className="btn btn--ghost btn--sm" href="/login">
+        <Link className="usermenu-pill" href="/login">
+          <UserIcon />
           Sign in
+          <CaretDown />
         </Link>
         <Link className="btn btn--sm" href="/signup">
           Create account
@@ -125,17 +125,19 @@ export function UserMenu({ compact = false }: { compact?: boolean }) {
   }
 
   const label =
-    profile?.full_name?.trim() ||
-    user.email?.split("@")[0] ||
-    "Account";
+    profile?.full_name?.trim() || user.email?.split("@")[0] || "Account";
 
   return (
     <span className="row" style={{ gap: ".45rem" }}>
-      <Link className="chip chip--primary" href="/account" title={user.email ?? ""}>
-        {label}
+      <Link className="usermenu-pill" href="/account" title={user.email ?? ""}>
+        <UserIcon />
+        <span className="usermenu-pill__name">{label}</span>
         {profile?.role && profile.role !== "customer" ? (
-          <span aria-label={`role: ${profile.role}`}>· {profile.role}</span>
+          <span className="usermenu-pill__role" aria-label={`role: ${profile.role}`}>
+            {profile.role}
+          </span>
         ) : null}
+        <CaretDown />
       </Link>
       <button
         type="button"
