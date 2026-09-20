@@ -183,6 +183,17 @@ a:hover { text-decoration: underline; }
    the viewport while the aside animates in above it. */
 .filter-sheet__scrim, .filter-sheet__bar, .filter-sheet__footer { display: none; }
 
+/* Staged apply needs its commit button on desktop too: the footer docks as a
+   static row at the bottom of the sidebar card (no sticky positioning). */
+@media (min-width: 921px) {
+  .filter-sheet__footer {
+    display: flex; gap: .6rem;
+    padding: .55rem .9rem .85rem;
+    border-top: 1px solid var(--border-subtle);
+  }
+  .filter-sheet__footer .btn { flex: 1; justify-content: center; }
+}
+
 /* Each filter section is a rounded card module: header row with a chevron
    that rotates 90° when open, collapsible panel below. */
 .filter-card {
@@ -193,14 +204,26 @@ a:hover { text-decoration: underline; }
 }
 .filter-card h3 { margin: 0; font-size: .92rem; }
 .filter-card h3 button {
-  width: 100%; display: flex; justify-content: space-between; align-items: center;
+  width: 100%;
+  display: flex; justify-content: space-between; align-items: center; gap: .75rem;
   background: none; border: 0; cursor: pointer; text-align: left;
-  padding: .75rem .9rem; font: inherit; font-weight: 700; color: var(--color-text);
+  padding: .85rem 1rem; font: inherit; font-weight: 700; color: var(--color-text);
 }
-.sidebar__glyph { color: var(--text-muted); font-weight: 700; display: inline-block; transition: transform .18s ease; }
+.filter-card__title { flex: 1 1 auto; min-width: 0; }
+/* Chevron: never squeezed by a long title — fixed basis, explicit size and
+   contrast, pinned right, and rotates when the panel is open. */
+.sidebar__glyph {
+  flex: 0 0 auto; min-width: 1.25rem; text-align: right;
+  font-size: 1rem; line-height: 1; color: var(--color-text);
+  display: inline-flex; justify-content: flex-end; align-items: center;
+  font-weight: 700; transition: transform .18s ease;
+}
 .sidebar__glyph--open { transform: rotate(90deg); }
 
-.sidebar__filters { display: flex; flex-direction: column; gap: .45rem; padding: .1rem .9rem .75rem; }
+/* Panel owns the breathing room: lists never touch card edges. */
+.filter-card__panel { padding: .75rem 1rem 1rem; }
+
+.sidebar__filters { display: flex; flex-direction: column; gap: .45rem; }
 .sidebar__filters label { display: flex; gap: .5rem; align-items: center; font-size: .86rem; cursor: pointer; }
 /* Min/Max in a constrained 2-col grid; Apply spans the full row. minmax(0,1fr)
    + width:100% keep the number inputs from growing past the sidebar column. */

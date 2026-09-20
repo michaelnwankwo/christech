@@ -2,39 +2,54 @@
 
 // src/components/sidebar/ResponsiveSidebar.tsx
 // Storefront filter panel — one component, two presentations:
-//   * ≥921px: docked accordion card beside the grid (unchanged contract);
+//   * ≥921px: docked accordion cards beside the grid (footer row included);
 //   * ≤920px: a bottom sheet (rounded top corners, slide-up + scrim fade),
 //     "Filter" header bar with ✕, scrollable body of section cards, and a
-//     sticky footer (Clear all · Show results).
-// Open state lives in storefront-store `sidebarOpen` (§7.1) — the products
-// header's FilterPill owns the same flag. Body scroll locks while the sheet
-// is open (mobile only); Escape and scrim taps dismiss.
+//     sticky footer (Clear all · Apply).
 //
-// Section order is FIXED by product spec: Category → Product Usage →
-// Availability → Supported Brands → Price Range (always last). The old
-// "Live Order Tracking & Recent Transactions" widgets were purged from the
-// storefront — realtime order UI belongs to /account only (the
-// useOrderRealtime hook stays for OrderTimeline).
+// STAGED APPLY: all controls edit the FilterDraftContext — no selection
+// touches the URL or router until "Apply" commits the draft as query params
+// (and closes the sheet). Closing/discarding keeps the old URL untouched.
+// Section order is FIXED: Category → Product Usage → Availability →
+// Supported Brands → Price Range (always last, immediately above the
+// action buttons). Open state for the sheet itself still lives in
+// storefront-store `sidebarOpen`, owned by the products-header FilterPill.
 
 import { useEffect, useState } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useStorefrontStore } from "@/stores/storefront-store";
 import {
   AvailabilityFilter,
-  BRAND_OPTIONS,
   BrandFilterList,
   CategoryFilter,
   PriceRangeFilter,
   UsageFilter,
-  countActiveFilters,
 } from "./FilterSections";
-
-type SheetSection = "category" | "usage" | "availability" | "brands" | "price";
+import {
+  FilterDraftProvider,
+  useFilterDraft,
+} from "./filter-draft";
 
 export function ResponsiveSidebar(props: {
   categories: string[];
   usageTags: string[];
 }) {
+  return (
+    <FilterDraftProvider>
+      <SidebarInner categories={props.categories} usageTags={props.usageTags} />
+    </FilterDraftProvider>
+  );
+}
+
+function SidebarInner({
+  categories,
+  usageTags,
+}: {
+  categories: string[];
+  usageTags: string[];
+}) {
+  type SheetSection = "category" | "usage" | "availability" | "brands" | "price";
+
   const [openSections, setOpenSections] = useState<
     Record<SheetSection, boolean>
   >({
@@ -48,12 +63,10 @@ export function ResponsiveSidebar(props: {
   const sidebarOpen = useStorefrontStore((s) => s.sidebarOpen);
   const setSidebarOpen = useStorefrontStore((s) => s.setSidebarOpen);
   const pathname = usePathname();
-  const router = useRouter();
-  const searchParams = useSearchParams();
+  const { commit, clearDraft, isEmpty, activeCount } = useFilterDraft();
 
   // Collapse whenever the route changes (e.g. /products → /cart) so the
-  // sheet can never float onto unrelated pages. Query-param updates keep
-  // the same pathname, so applying filters inside the sheet keeps it open.
+  // sheet can never float onto unrelated pages.
   useEffect(() => {
     setSidebarOpen(false);
   }, [pathname, setSidebarOpen]);
@@ -70,7 +83,7 @@ export function ResponsiveSidebar(props: {
     };
   }, [sidebarOpen]);
 
-  // Escape dismisses the sheet.
+  // Escape dismisses the sheet (draft discarded by the provider's re-sync).
   useEffect(() => {
     if (!sidebarOpen) return;
     const onKey = (event: KeyboardEvent) => {
@@ -86,8 +99,6 @@ export function ResponsiveSidebar(props: {
       [section]: !current[section],
     }));
   }
-
-  const activeCount = countActiveFilters(searchParams);
 
   return (
     <>
@@ -122,7 +133,7 @@ export function ResponsiveSidebar(props: {
             open={openSections.category}
             onToggle={() => toggleSection("category")}
           >
-            <CategoryFilter categories={props.categories} />
+            <CategoryFilter categories={categories} />
           </FilterSection>
 
           <FilterSection
@@ -131,7 +142,7 @@ export function ResponsiveSidebar(props: {
             open={openSections.usage}
             onToggle={() => toggleSection("usage")}
           >
-            <UsageFilter usageTags={props.usageTags} />
+            <UsageFilter usageTags={usageTags} />
           </FilterSection>
 
           <FilterSection
@@ -149,7 +160,7 @@ export function ResponsiveSidebar(props: {
             open={openSections.brands}
             onToggle={() => toggleSection("brands")}
           >
-            <BrandFilterList brands={BRAND_OPTIONS} />
+            <BrandFilterList />
           </FilterSection>
 
           <FilterSection
@@ -160,33 +171,20 @@ export function ResponsiveSidebar(props: {
           >
             <PriceRangeFilter />
           </FilterSection>
-
-          <div className="sidebar__actions sidebar__actions--docked">
-            <button
-              type="button"
-              className="btn btn--ghost btn--sm"
-              onClick={() => router.push(pathname, { scroll: false })}
-            >
-              Reset all filters
-            </button>
-          </div>
         </div>
 
         <div className="filter-sheet__footer">
           <button
             type="button"
             className="btn btn--secondary btn--sm"
-            disabled={activeCount === 0}
-            onClick={() => router.push(pathname, { scroll: false })}
+            onClick={clearDraft}
+            disabled={isEmpty}
           >
             Clear all
           </button>
-          <button
-            type="button"
-            className="btn btn--sm"
-            onClick={() => setSidebarOpen(false)}
-          >
-            Show results{activeCount > 0 ? ` · ${activeCount}` : ""}
+          <button type="button" className="btn btn--sm" onClick={commit}>
+            Apply
+            {activeCount > 0 ? ` · ${activeCount}` : ""}
           </button>
         </div>
       </aside>
@@ -195,9 +193,9 @@ export function ResponsiveSidebar(props: {
 }
 
 /**
- * One accordion card: header row with chevron (› rotates when open) and a
- * collapsible panel. The BUTTON carries the aria-controls/labelledby ids —
- * the §19.4 dangling-label fix from the original blueprint sketch is kept.
+ * One accordion card: header row (title left, chevron far right) over a
+ * padded content panel. The BUTTON carries the aria ids — the §19.4
+ * dangling-label convention from the original blueprint sketch is kept.
  */
 function FilterSection({
   id,
@@ -225,7 +223,7 @@ function FilterSection({
           aria-controls={panelId}
           onClick={onToggle}
         >
-          <span>{title}</span>
+          <span className="filter-card__title">{title}</span>
           <span
             aria-hidden="true"
             className={`sidebar__glyph${open ? " sidebar__glyph--open" : ""}`}
@@ -235,7 +233,13 @@ function FilterSection({
         </button>
       </h3>
 
-      <div id={panelId} role="region" aria-labelledby={buttonId} hidden={!open}>
+      <div
+        id={panelId}
+        className="filter-card__panel"
+        role="region"
+        aria-labelledby={buttonId}
+        hidden={!open}
+      >
         {children}
       </div>
     </section>
