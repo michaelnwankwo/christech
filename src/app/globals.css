@@ -92,17 +92,25 @@ a:hover { text-decoration: underline; }
 }
 .site-header__inner {
   max-width: 1280px; margin: 0 auto; height: 100%;
-  display: flex; align-items: center; gap: 1rem;
-  padding: 0 1rem;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 1rem; padding: 0 1rem;
+  flex-wrap: nowrap; /* one row, always — see the brand-logo tiers below */
 }
-.site-header__spacer { flex: 1; }
-.site-header__desktop { display: flex; align-items: center; gap: 1rem; }
-.site-header__modeswitch { display: inline-flex; }
+.site-header__spacer { flex: 1 1 auto; min-width: 0; }
+/* Right-hand actions (Cart / Account pill) never compress or wrap; the
+   spacer eats slack first, then the shrinkable logo gives room (see its
+   tier rules). flex:none keeps every touch target its declared size. */
+.site-header__desktop { display: flex; align-items: center; gap: 1rem; flex: none; white-space: nowrap; }
+.site-header__modeswitch { display: inline-flex; flex: none; }
 .mobile-nav-host { display: none; }
 /* Mobile top-bar cart (Option A): only the ≤768px cluster shows it. */
 .site-header__mobile-actions { display: none; align-items: center; gap: .4rem; }
 .site-header__mobile-actions .cart-badge-count { top: -4px; right: -4px; }
-.brand-logo { display: inline-flex; align-items: center; gap: .5rem; color: var(--color-text); }
+/* The logo cluster is the ONLY shrinkable row member (flex 0 1 auto +
+   min-width 0): its img already caps at max-width:100% + object-contain, so
+   when a narrow laptop viewport runs out of room the mark letterboxes down
+   gracefully instead of shoving Store / Book a service / Cart / Account. */
+.brand-logo { display: inline-flex; align-items: center; gap: .5rem; color: var(--color-text); flex: 0 1 auto; min-width: 0; }
 .brand-logo:hover { text-decoration: none; }
 /* Sizes now mean VISIBLE pixels: /logo-header.png is cropped to its alpha
    bbox (1106:167). Desktop 44px; width:auto + object-fit:contain keep the
@@ -110,6 +118,14 @@ a:hover { text-decoration: underline; }
    calibration — at that size the ~6.6:1 wordmark never crowds the small
    phone's cart/burger cluster, so no width-driven guard is needed. */
 .brand-logo img { height: 44px; width: auto; max-width: 100%; object-fit: contain; display: block; }
+/* Tablet/laptop tiers (source-ordered before the ≤768 block so mobile's
+   24px still wins): 44px mark = ~291px wide, which overruns the 769–1100px
+   row budget; the caps below keep logo+nav+actions in one unwrapped row.
+   (Tailwind-speak of the request — w-44 md / w-48 lg, w-full h-auto
+   object-contain — mapped onto the repo's height-driven CSS; Image keeps its
+   true 1106:167 props so no letterbox artifacts creep in.) */
+@media (max-width: 1100px) { .brand-logo img { height: 30px; } }
+@media (max-width: 900px) { .brand-logo img { height: 26px; } }
 .brand-logo .brand-logo__mark { flex: none; }
 .brand-logo__word { display: flex; flex-direction: column; line-height: 1.05; }
 .brand-logo__word b { font-size: 1rem; letter-spacing: .01em; font-weight: 800; }
@@ -821,12 +837,25 @@ a:hover { text-decoration: underline; }
 }
 .stack { display: flex; flex-direction: column; gap: .5rem; }
 .row { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+/* Skip link — sr-only BOX technique (1px + clip-path), not left:-9999px:
+   an off-canvas box is "hidden" only until any ancestor's overflow/transform
+   assumption breaks, which is how it was seen floating top-left on reload.
+   A clipped 1px box cannot render regardless of ancestors; focus-visible
+   (keyboard Tab) unpacks it into the floating pill, mouse/touch never does. */
 .skip-link {
-  position: absolute; left: -9999px; top: 8px; z-index: 100;
-  background: var(--color-surface); padding: .5rem .9rem;
-  border: 2px solid var(--color-primary); border-radius: .5rem;
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+  overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%);
+  white-space: nowrap; border: 0; background: transparent;
 }
-.skip-link:focus { left: 8px; }
+.skip-link:focus-visible {
+  position: fixed; top: 8px; left: 8px; z-index: 100;
+  width: auto; height: auto; margin: 0; padding: .5rem .9rem;
+  overflow: visible; clip: auto; clip-path: none; white-space: normal;
+  background: var(--color-surface); color: var(--color-primary);
+  font-weight: 600; text-decoration: none;
+  border: 2px solid var(--color-primary); border-radius: .5rem;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, .18);
+}
 
 /* ── Auth pages ────────────────────────────────────────────────────────── */
 .auth-wrap {
