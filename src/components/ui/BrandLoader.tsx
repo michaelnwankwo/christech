@@ -43,7 +43,7 @@ export function BrandLoader(props: BrandLoaderProps) {
       <div className="brand-loader brand-loader--full" role="status">
         <div className="brand-loader__stack">
           <BrandMark />
-          <p className="brand-loader__label">{label ?? "Loading Christech…"}</p>
+          <p className="brand-loader__label">{label ?? "Loading…"}</p>
         </div>
       </div>
     );

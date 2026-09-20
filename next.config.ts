@@ -6,6 +6,12 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // The dark circular "N" pinned bottom-left in the browser is Next.js's own
+  // dev-tools indicator (dev-only; never ships in production builds). The
+  // storefront renders its own branded loader, so the framework orb is pure
+  // visual noise — disable it in dev as well. (next@15 schema accepts
+  // `devIndicators: false` or { buildActivityPosition } — boolean off here.)
+  devIndicators: false,
   async headers() {
     return [
       {
