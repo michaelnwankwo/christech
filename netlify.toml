@@ -1,0 +1,76 @@
+# netlify.toml — Next.js 15 App Router on Netlify
+#
+# Runtime note (intentional deviation from the legacy recipe): Netlify runs
+# Next.js via the built-in "Next.js Runtime" (v5+). The old
+# [[plugins]] package = "@netlify/plugin-nextjs" entry is DEPRECATED — the
+# platform warns and refuses to deploy where the managed runtime is active,
+# and manually installing the plugin package causes exactly the version
+# conflict it tells you to avoid. Framework detection below binds the runtime;
+# no npm dependency is added.
+
+[build]
+  command = "npm run build"
+  publish = ".next"
+  # "#nextjs" selects the managed Next.js runtime (routing, server actions,
+  # image optimization, middleware all execute there — CSP nonce + session
+  # refresh in src/middleware.ts keep working; nothing to port).
+
+  [build.environment]
+    NODE_VERSION = "20"          # matches next@15.5 engines; pin beats auto-detect
+    NEXT_TELEMETRY_DISABLED = "1"
+    NPM_CONFIG_FUND = "false"
+    NPM_CONFIG_AUDIT = "false"
+
+[build.processing]
+  skip_processing = false
+[build.processing.css]
+  bundle = true
+  minify = true
+[build.processing.js]
+  bundle = true
+  minify = true
+[build.processing.images]
+  compress = true
+
+# ── Static headers ────────────────────────────────────────────────────────
+# Deliberately minimal: CSP (incl. frame-ancestors 'self') is emitted per
+# request by Next middleware with a fresh nonce — netlify.toml headers are
+# STATIC and must not duplicate or fight it. X-Frame-Options is omitted for
+# the same reason (CSP supersedes).
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=(self), payment=()"
+    Cross-Origin-Opener-Policy = "same-origin"
+
+[[headers]]
+  # immutable Next asset fingerprinting (runtime already sets this for
+  # /_next/static; belt-and-braces for upload/ and any public hashed assets)
+  for = "/_next/static/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/brand/*"
+  [headers.values]
+    Cache-Control = "public, max-age=604800, stale-while-revalidate=86400"
+
+[[headers]]
+  for = "/logo.png"
+  [headers.values]
+    Cache-Control = "public, max-age=604800, stale-while-revalidate=86400"
+
+# ── Routing ───────────────────────────────────────────────────────────────
+# NO catch-all SPA rewrite on purpose: /./index.html-style fallbacks break
+# App Router SSR (they would shadow /products, /booking, all RSC routes).
+# Runtime v5 serves the routes manifest itself — App Router + dynamic
+# force-dynamic pages (cart/checkout/products) are executed, not statically
+# rewritten. Netlify-specific edge routing therefore needs zero config here.
+
+# Cron note: the app's maintenance job stays an EXTERNAL caller of
+# POST /api/jobs/maintenance with the CRON_SECRET bearer token (Netlify cron
+# can schedule a function but this app's job is an API route; keep the
+# GitHub-Actions/uptime cron that already targets it).

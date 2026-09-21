@@ -40,7 +40,17 @@ export default async function ProductsPage({
     page: Math.max(1, Math.floor(Number(first(sp.page)) || 1)),
   };
 
-  const result = await listProductCards(parsedFilters).catch(() => null);
+  // Distinguish "query threw" (config/DB down — show an ops-facing banner)
+  // from "query returned zero rows" (filters legitimately matched nothing):
+  // both used to render the same misleading "No products match" state,
+  // which cost a full debugging round on the live deploy.
+  let loadError: string | null = null;
+  let result: Awaited<ReturnType<typeof listProductCards>> | null = null;
+  try {
+    result = await listProductCards(parsedFilters);
+  } catch (e) {
+    loadError = (e as Error)?.message ?? "catalog_unavailable";
+  }
   // Fixed precedence: the old `category ? 1 : 0 + …` expression only ever
   // counted the category. Every filter group contributes its real share.
   const activeCount =
@@ -73,6 +83,14 @@ export default async function ProductsPage({
       {/* Suspense keeps this boundary independent of the route-level
           loading.tsx: on streamed requests the branded skeleton grid paints
           with the shell and swaps in place (same .product-grid tiers). */}
+      {loadError ? (
+        <div className="banner banner--error" role="alert">
+          The catalog data layer is unavailable right now — this is not a
+          filter problem. Site operators: check{" "}
+          <code>/api/health</code> and the deployment environment variables.
+        </div>
+      ) : null}
+
       <Suspense fallback={<BrandLoader variant="skeleton" count={12} />}>
         <ProductGrid cards={result?.cards ?? []} />
       </Suspense>
