@@ -10,8 +10,15 @@ import { getSupabasePublicEnv } from "@/lib/supabase/config";
 /** Synthetic caller id used by demo-mode requests (never a real row). */
 export const DEMO_USER_ID = "de400000-de40-4000-8000-000000000001";
 
+const truthy = (v: string | undefined) => v === "1" || v === "true";
+
 export function demoOptIn(): boolean {
-  return process.env.DEMO_FALLBACK === "1";
+  return (
+    truthy(process.env.DEMO_FALLBACK) ||
+    truthy(process.env.NEXT_PUBLIC_USE_DEMO_DATA) ||
+    // server-side alias (bake-free for Netlify runtime envs / containers)
+    truthy(process.env.USE_DEMO_DATA)
+  );
 }
 
 /** Is falling back to demo data ALLOWED in this environment at all? */
@@ -21,6 +28,12 @@ export function demoEligible(): boolean {
 
 export function supabaseConfigured(): boolean {
   return getSupabasePublicEnv() !== null;
+}
+
+/** Demo serving allowed for THIS request: explicit opt-in, or simply no
+ *  Supabase keys at all (rule 1 of the policy header). */
+export function demoActive(): boolean {
+  return !supabaseConfigured() || demoEligible();
 }
 
 /** 2.5 s cap — supabase-js has no request timeout of its own. */

@@ -4,7 +4,8 @@
 // the same rejection classes (unknown ids, orphan/booking add-ons, dupes),
 // and a uuid-shaped quoteId so shared validation is exercised too.
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, afterEach, vi } from "vitest";
+import { demoActive, demoOptIn, supabaseConfigured } from "@/lib/demo/policy";
 import {
   demoBookingServices,
   demoListProductCards,
@@ -274,5 +275,29 @@ describe("demo booking tickets", () => {
       demoServiceRequestTicket("de400000-0000-4000-8000-000000000021")
     ).toMatchObject({ status: 422 });
     expect(demoServiceRequestTicket("nope")).toMatchObject({ status: 404 });
+  });
+});
+
+// ── demo policy flag surface (the staging-skeleton switches) ──────────────
+describe("demo policy flags", () => {
+  afterEach(() => vi.unstubAllEnvs());
+
+  it("NEXT_PUBLIC_USE_DEMO_DATA accepts true/1", () => {
+    vi.stubEnv("NEXT_PUBLIC_USE_DEMO_DATA", "true");
+    expect(demoOptIn()).toBe(true);
+    vi.stubEnv("NEXT_PUBLIC_USE_DEMO_DATA", "1");
+    expect(demoOptIn()).toBe(true);
+    vi.stubEnv("NEXT_PUBLIC_USE_DEMO_DATA", "0");
+    expect(demoOptIn()).toBe(false); // explicit off
+  });
+
+  it("DEMO_FALLBACK=1 keeps working (back-compat)", () => {
+    vi.stubEnv("DEMO_FALLBACK", "1");
+    expect(demoOptIn()).toBe(true);
+  });
+
+  it("no Supabase keys ⇒ demo is active regardless of opt-in", () => {
+    expect(supabaseConfigured()).toBe(false); // test env has no keys
+    expect(demoActive()).toBe(true);
   });
 });

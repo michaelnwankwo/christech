@@ -5,7 +5,7 @@
 // error CODES only — never keys, never rows, never user data.
 import { NextResponse } from "next/server";
 import { getSupabasePublicEnv } from "@/lib/supabase/config";
-import { demoEligible } from "@/lib/demo/policy";
+import { demoActive, demoEligible } from "@/lib/demo/policy";
 
 export const dynamic = "force-dynamic";
 
@@ -16,17 +16,24 @@ export async function GET() {
     env: {
       supabasePublicEnvConfigured: env !== null,
       demoFallbackAllowed: demoEligible(),
+      demoActive: demoActive(),
     },
   };
 
   if (!env) {
+    // Policy rule 1: no keys ⇒ deliberate staging skeleton serving the
+    // offline demo catalog. Still NOT ok:true-as-production — mode:"demo"
+    // tells ops exactly why the numbers are mock.
+    const { demoListProductCards } = await import("@/lib/demo/catalog");
     return NextResponse.json(
       {
         ...snapshot,
-        error:
-          "NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY missing or placeholder on this deployment — set them in Netlify and redeploy (NEXT_PUBLIC_* bakes at build time).",
+        ok: true,
+        mode: "demo",
+        catalog: { activeProducts: demoListProductCards({}).totalCount },
+        note: "NEXT_PUBLIC_SUPABASE_URL / ANON_KEY not set on this deployment — serving the demo catalog. Set the keys (and optionally NEXT_PUBLIC_USE_DEMO_DATA=false) and redeploy for live data.",
       },
-      { status: 503, headers: { "Cache-Control": "no-store" } }
+      { status: 200, headers: { "Cache-Control": "no-store" } }
     );
   }
 
