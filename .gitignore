@@ -1,14 +1,16 @@
 node_modules/
 .next/
+# Netlify CLI local state carries absolute machine paths — never commit it.
+.netlify/
 out/
 coverage/
 .env
 .env.local
+# Supabase CLI local state (link targets, pooler urls) — machine-specific, never commit
+supabase/.temp/
+
 *.tsbuildinfo
 next-env.d.ts
 
 # handoff patches are delivered outside the tree — keep them out of git
 *.patch
-
-# Local Netlify folder
-.netlify

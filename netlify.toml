@@ -10,7 +10,13 @@
 
 [build]
   command = "npm run build"
-  publish = ".next"
+  publish = ".next"          # ALWAYS repo-relative — never an absolute path.
+  framework = "#nextjs"      # binds the managed Next.js Runtime (v5+):
+                             # routing, server actions, image optimization and
+                             # middleware run there. Do NOT also add
+                             # @netlify/plugin-nextjs to netlify.toml or
+                             # package.json — the plugin is retired and the
+                             # runtime guardrail fails builds that re-add it.
   # "#nextjs" selects the managed Next.js runtime (routing, server actions,
   # image optimization, middleware all execute there — CSP nonce + session
   # refresh in src/middleware.ts keep working; nothing to port).
@@ -20,6 +26,14 @@
     NEXT_TELEMETRY_DISABLED = "1"
     NPM_CONFIG_FUND = "false"
     NPM_CONFIG_AUDIT = "false"
+  # NOTE: 2-space continuation is fine, TOML keys are whitespace-insensitive.
+  # Secrets scanning stays ENABLED — this is an explicit allow-list, not a
+  # mute: only values that are public BY DESIGN are omitted (the public FX
+  # endpoint appears in .env.example/docs/code defaults as documentation,
+  # and NEXT_PUBLIC_* values must be baked into client bundles to work).
+  # Real secrets (PAYSTACK_SECRET_KEY, SUPABASE_SERVICE_ROLE_KEY,
+  # CRON_SECRET, FX_PROVIDER_API_KEY) remain actively scanned.
+  SECRETS_SCAN_OMIT_KEYS = "FX_PROVIDER_BASE_URL,FX_PROVIDER_BASE_CURRENCY,FX_CACHE_TTL_SECONDS,FX_MAX_AGE_SECONDS,MANUAL_FX_RATES,PAYSTACK_ENABLED_CURRENCIES,CHECKOUT_QUOTE_TTL_SECONDS,DEMO_FALLBACK,USE_DEMO_DATA,NEXT_PUBLIC_USE_DEMO_DATA,NEXT_PUBLIC_APP_URL,NEXT_PUBLIC_SUPABASE_URL,NEXT_PUBLIC_SUPABASE_ANON_KEY,NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY"
 
 [build.processing]
   skip_processing = false
