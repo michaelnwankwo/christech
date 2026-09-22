@@ -152,7 +152,9 @@ export function CartDrawer() {
         </div>
 
         <div className="cart-drawer__foot">
-          <CartTotals />
+          {/* The shipping/conversion micro-copy belongs to the checkout
+              footers (cart page + CartReview), not the compact drawer. */}
+          <CartTotals showShippingNote={false} />
           <Link
             href="/checkout"
             className="btn cart-drawer__checkout"

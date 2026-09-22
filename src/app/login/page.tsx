@@ -8,6 +8,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createBrowserSupabaseClient } from "@/lib/supabase/browser";
 import { sanitizeNext } from "@/lib/security/next-param";
+import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 
 export default function LoginPage() {
   return (
@@ -83,6 +84,7 @@ function LoginForm() {
       <button className="btn" type="submit" disabled={busy}>
         {busy ? "Signing in…" : "Sign in"}
       </button>
+      <GoogleSignInButton next={searchParams.get("next")} />
       <p style={{ margin: 0, fontSize: ".85rem" }}>
         New here? <Link href="/signup">Create an account</Link>
       </p>

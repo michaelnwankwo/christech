@@ -14,7 +14,13 @@ import Link from "next/link";
 import { useCartStore, cartSubtotalDisplayMinor } from "@/stores/cart-store";
 import { formatMinorMoney } from "@/lib/currency/money";
 
-export function CartTotals({ withCheckoutLink = false }: { withCheckoutLink?: boolean }) {
+export function CartTotals({
+  withCheckoutLink = false,
+  showShippingNote = true,
+}: {
+  withCheckoutLink?: boolean;
+  showShippingNote?: boolean;
+}) {
   const lines = useCartStore((s) => s.lines);
   const displayCurrency = useCartStore((s) => s.displayCurrency);
   const fxRates = useCartStore((s) => s.fxRates);
@@ -54,7 +60,7 @@ export function CartTotals({ withCheckoutLink = false }: { withCheckoutLink?: bo
         <span>Shipping</span>
         <span className="muted">{shippingDisplay}</span>
       </div>
-      {!quote ? (
+      {showShippingNote && !quote ? (
         <p className="muted" style={{ margin: 0, fontSize: ".78rem" }}>
           Shipping and currency conversion are confirmed on checkout.
         </p>

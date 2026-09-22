@@ -11,8 +11,6 @@
 // nothing in it stays focusable (no invisible-focus traps).
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AppModeSwitch } from "./AppModeSwitch";
 import { CurrencyPicker } from "./CurrencyPicker";
@@ -53,15 +51,9 @@ export function MobileNav() {
         aria-label="Mobile navigation"
         hidden={!open}
       >
-        <Link href="/" className="mobile-nav__brand" aria-label="Chrisviscus Technologies — home">
-          <Image
-            src="/logo-header.png"
-            alt="Chrisviscus Technologies"
-            width={1106}
-            height={167}
-            unoptimized
-          />
-        </Link>
+        {/* No brand repeat here: the header's own .brand-logo stays visible
+            on mobile (its tiers only shrink it), so a second logo inside the
+            opened drawer read as a duplicate. */}
         <AppModeSwitch />
         {/* Profile first — an explicit, labeled row, not a lone avatar. */}
         <MobileProfileRow />

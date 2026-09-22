@@ -1029,9 +1029,8 @@ a:hover { text-decoration: underline; }
 .mobile-nav > .row { justify-content: space-between; }
 
 /* Drawer utility row: currency + avatar left, Sign out far right. */
-/* Drawer branding header: new wordmark at the top of the panel. */
-/* Drawer mark follows the 1.6x mobile calibration exactly. */
-.mobile-nav .mobile-nav__brand img { height: 24px; width: auto; max-width: 100%; object-fit: contain; display: block; }
+/* (.mobile-nav__brand removed with the drawer logo — the header brand
+    stays visible on mobile, the drawer must not repeat it.) */
 
 /* Utility row sits under a hairline so currency never crowds the profile
    card or the nav buttons. */

@@ -10,6 +10,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createBrowserSupabaseClient } from "@/lib/supabase/browser";
 import { sanitizeNext } from "@/lib/security/next-param";
+import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 
 export default function SignupPage() {
   return (
@@ -122,6 +123,7 @@ function SignupForm() {
           <button className="btn" type="submit" disabled={busy}>
             {busy ? "Creating account…" : "Create account"}
           </button>
+          <GoogleSignInButton next={next} />
           <p style={{ margin: 0, fontSize: ".85rem" }}>
             Already registered? <Link href="/login">Sign in</Link>
           </p>
