@@ -9,9 +9,9 @@
 // rebuilds everything from productId/serviceId/quantity — the client id only
 // wires parents to children (§17.1).
 
-import { useCallback, useEffect, useState, useTransition } from "react";
+import { useCallback, useState, useTransition } from "react";
 import { useCartStore, type CartLine } from "@/stores/cart-store";
-import { useStorefrontStore } from "@/stores/storefront-store";
+import { useToastStore } from "@/stores/toast-store";
 import { BrandLoader } from "@/components/ui/BrandLoader";
 
 type Addon = {
@@ -27,6 +27,7 @@ type ProductSeed = {
   sku: string;
   unitPriceMinor: number;
   shippingClass: string;
+  imageUrl?: string;
   disabled?: boolean;
 };
 
@@ -44,20 +45,10 @@ export function AddToCartButton(props: {
 }) {
   const addProduct = useCartStore((s) => s.addProduct);
   const addServiceAddon = useCartStore((s) => s.addServiceAddon);
-  const openCart = useStorefrontStore((s) => s.openCart);
+  const pushToast = useToastStore((s) => s.push);
 
   const [pending, startAdd] = useTransition();
   const [selectedAddons, setSelectedAddons] = useState<Set<string>>(new Set());
-  const [feedback, setFeedback] = useState<string | null>(null);
-
-  // On grid cards the feedback renders as an absolutely positioned overlay
-  // (.atc--floating) so it never changes card height; it self-dismisses so
-  // the overlay does not sit on the card forever.
-  useEffect(() => {
-    if (!feedback) return;
-    const timer = setTimeout(() => setFeedback(null), 2500);
-    return () => clearTimeout(timer);
-  }, [feedback]);
 
   const toggleAddon = useCallback((id: string) => {
     setSelectedAddons((current) => {
@@ -106,24 +97,32 @@ export function AddToCartButton(props: {
       if (!ok) orphan = true;
     }
 
-    setFeedback(
-      addons.length > 0
-        ? orphan
-          ? "Product added; an add-on could not attach — open the cart to retry."
-          : `Added ${props.product.name} +${addons.length} service add-on${addons.length > 1 ? "s" : ""}`
-        : `Added ${props.product.name}`
+    // Toast (Option A): replaces both the inline card feedback text and the
+    // auto-opened drawer. The drawer now opens only when the customer asks
+    // via "View cart" — shopping multiple products no longer interrupts.
+    pushToast(
+      addons.length > 0 && orphan
+        ? {
+            title: "Added with a warning",
+            body: `${props.product.name} — an add-on could not attach; open the cart to retry.`,
+            tone: "warn",
+            thumbUrl: props.product.imageUrl,
+            action: { label: "View cart", run: "open-cart" },
+          }
+        : {
+            title: "Added to cart",
+            body:
+              addons.length > 0
+                ? `${props.product.name} +${addons.length} service add-on${addons.length > 1 ? "s" : ""}`
+                : props.product.name,
+            thumbUrl: props.product.imageUrl,
+            action: { label: "View cart", run: "open-cart" },
+          }
     );
-
-    openCart();
   }
 
   return (
-    <span
-      className={
-        props.withAddonPicker ? "stack atc" : "stack atc atc--floating"
-      }
-      style={{ gap: ".45rem", width: "100%" }}
-    >
+    <span className={props.withAddonPicker ? "stack atc" : "atc"} style={{ gap: ".45rem", width: "100%" }}>
       {props.withAddonPicker && props.addons && props.addons.length > 0 ? (
         <fieldset className="addon-list" style={{ border: 0, margin: 0, padding: 0 }}>
           <legend className="muted" style={{ fontSize: ".8rem", fontWeight: 600 }}>
@@ -168,11 +167,6 @@ export function AddToCartButton(props: {
             ? <BrandLoader variant="inline" label="Adding…" />
             : "Add to cart"}
       </button>
-      {feedback ? (
-        <span role="status" className="atc__feedback">
-          {feedback}
-        </span>
-      ) : null}
     </span>
   );
 }

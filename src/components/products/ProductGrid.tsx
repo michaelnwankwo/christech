@@ -60,6 +60,7 @@ export function ProductGrid({ cards }: { cards: ProductCard[] }) {
                   sku: card.sku,
                   unitPriceMinor: card.unitPriceMinor,
                   shippingClass: "standard",
+                  imageUrl: card.imageUrls[0],
                   disabled: card.inventoryQty <= 0,
                 }}
                 addons={card.addonServices.map((a) => ({

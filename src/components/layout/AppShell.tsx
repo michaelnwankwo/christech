@@ -7,6 +7,7 @@
 // services layout mounts booking navigation INSTEAD and never mounts the
 // cart drawer (§8.3 mandate).
 import { SiteHeader } from "./SiteHeader";
+import { Toaster } from "@/components/ui/Toaster";
 
 export function AppShell({
   children,
@@ -20,6 +21,9 @@ export function AppShell({
       <SiteHeader mode={mode} />
       <main id="main-content">{children}</main>
       <SiteFooter />
+      {/* Transient confirmations (add-to-cart) — client island, renders
+          nothing until a toast exists. */}
+      <Toaster />
     </div>
   );
 }

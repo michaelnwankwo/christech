@@ -90,6 +90,7 @@ export default async function ProductPage({
                 sku: product.sku,
                 unitPriceMinor: product.unitPriceMinor,
                 shippingClass: product.shippingClass,
+                imageUrl: product.imageUrls[0],
                 disabled: product.inventoryQty <= 0,
               }}
               addons={product.availableAddons}

@@ -468,23 +468,57 @@ a:hover { text-decoration: underline; }
   }
 }
 
-/* Add-to-cart feedback. On grid cards (.atc--floating) it is an overlay
-   pinned to the card bottom — position:absolute against the relative
-   .product-card — so toggling it never changes card height. On the detail
-   page it stays in normal flow beneath the button. pointer-events:none so
-   the overlay can never block the card's controls. */
-.atc__feedback { display: block; font-size: .8rem; color: var(--text-muted); }
-.atc--floating .atc__feedback {
-  position: absolute; left: .5rem; right: .5rem; bottom: .5rem; z-index: 10;
-  margin: 0; padding: .4rem .6rem; text-align: center;
-  font-size: .76rem; color: var(--color-text);
-  background: var(--color-surface);
-  border: 1px solid var(--border-subtle); border-radius: .55rem;
-  box-shadow: var(--shadow-card);
+/* ── Toast stack (Option A) ─────────────────────────────────────────────
+   Replaces the retired .atc__feedback inline card text (and its floating
+   overlay variant — no longer needed now that nothing renders on the card).
+   Mobile: bottom-center, safe-area aware. ≥640px: bottom-right corner.
+   z-index 80 clears the cart drawer (60/70) and header (40). The container
+   is pointer-events:none so toasts never block the page; items re-enable. */
+.toaster {
+  position: fixed; left: 1rem; right: 1rem;
+  bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+  z-index: 80; display: flex; flex-direction: column; gap: .5rem;
   pointer-events: none;
 }
-@media (max-width: 639px) {
-  .atc--floating .atc__feedback { left: .35rem; right: .35rem; bottom: .35rem; font-size: .68rem; padding: .3rem .4rem; }
+.toast {
+  pointer-events: auto;
+  display: flex; align-items: center; gap: .6rem;
+  padding: .55rem .7rem; max-width: 100%;
+  background: var(--color-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  backdrop-filter: blur(6px);
+  animation: toast-in .22s ease-out;
+}
+.toast__thumb {
+  width: 40px; height: 40px; object-fit: cover; border-radius: .5rem; flex: none;
+}
+.toast__text { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.toast__title { font-size: .84rem; }
+.toast__body {
+  font-size: .76rem; color: var(--text-muted);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.toast__actions { display: flex; align-items: center; gap: .35rem; flex: none; }
+.toast__close {
+  background: none; border: 0; cursor: pointer; padding: .2rem .3rem;
+  color: var(--text-muted); font-size: .9rem; line-height: 1; border-radius: .4rem;
+}
+.toast__close:hover { color: var(--color-text); }
+.toast--warn { border-color: #f2b8b5; }
+@media (min-width: 640px) {
+  .toaster {
+    left: auto; right: 1.25rem; bottom: 1.25rem;
+    width: min(23rem, calc(100vw - 2.5rem));
+  }
+}
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(.6rem); }
+  to   { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .toast { animation: none; }
 }
 
 .pagination { display: flex; gap: .5rem; justify-content: center; align-items: center; padding: .5rem 0 1rem; }
