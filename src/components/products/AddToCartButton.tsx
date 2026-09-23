@@ -122,7 +122,11 @@ export function AddToCartButton(props: {
   }
 
   return (
-    <span className={props.withAddonPicker ? "stack atc" : "atc"} style={{ gap: ".45rem", width: "100%" }}>
+    // .stack (flex column, children stretch) is what gives the grid button
+    // its full-width; it was dropped along with the floating modifier last
+    // round and collapsed the CTA to fit-content. Restore it for BOTH
+    // variants — the detail page used it anyway.
+    <span className="stack atc" style={{ gap: ".45rem", width: "100%" }}>
       {props.withAddonPicker && props.addons && props.addons.length > 0 ? (
         <fieldset className="addon-list" style={{ border: 0, margin: 0, padding: 0 }}>
           <legend className="muted" style={{ fontSize: ".8rem", fontWeight: 600 }}>
