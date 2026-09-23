@@ -23,6 +23,15 @@ export function GoogleSignInButton({ next }: { next?: string | null }) {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
+  // Product decision: email+password is the default surface; the OAuth
+  // button stays in the tree but hidden until NEXT_PUBLIC_AUTH_GOOGLE_ENABLED
+  // ="true" is set at build (i.e. once the Supabase Google provider is
+  // configured). Hooks run before this check — constant per build, so hook
+  // order never changes between renders.
+  if (process.env.NEXT_PUBLIC_AUTH_GOOGLE_ENABLED !== "true") {
+    return null;
+  }
+
   async function continueWithGoogle() {
     setBusy(true);
     setError(null);

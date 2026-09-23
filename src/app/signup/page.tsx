@@ -11,6 +11,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { createBrowserSupabaseClient } from "@/lib/supabase/browser";
 import { sanitizeNext } from "@/lib/security/next-param";
 import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
+import { PasswordField } from "@/components/auth/PasswordField";
 
 export default function SignupPage() {
   return (
@@ -105,18 +106,14 @@ function SignupForm() {
               onChange={(e) => setEmail(e.target.value)}
             />
           </div>
-          <div className="field">
-            <label htmlFor="password">Password</label>
-            <input
-              id="password"
-              type="password"
-              autoComplete="new-password"
-              required
-              minLength={8}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </div>
+          <PasswordField
+            id="password"
+            label="Password"
+            autoComplete="new-password"
+            minLength={8}
+            value={password}
+            onChange={setPassword}
+          />
           {message ? (
             <p className="banner banner--error" role="alert">{message}</p>
           ) : null}

@@ -9,6 +9,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { createBrowserSupabaseClient } from "@/lib/supabase/browser";
 import { sanitizeNext } from "@/lib/security/next-param";
 import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
+import { PasswordField } from "@/components/auth/PasswordField";
 
 export default function LoginPage() {
   return (
@@ -67,17 +68,18 @@ function LoginForm() {
           onChange={(e) => setEmail(e.target.value)}
         />
       </div>
-      <div className="field">
-        <label htmlFor="password">Password</label>
-        <input
-          id="password"
-          type="password"
-          autoComplete="current-password"
-          required
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-      </div>
+      <PasswordField
+        id="password"
+        label="Password"
+        autoComplete="current-password"
+        value={password}
+        onChange={setPassword}
+      />
+      {searchParams.get("reset") === "1" ? (
+        <p className="banner banner--info" role="status">
+          Password updated — sign in with your new password.
+        </p>
+      ) : null}
       {message ? (
         <p className="banner banner--error" role="alert">{message}</p>
       ) : null}
@@ -86,7 +88,8 @@ function LoginForm() {
       </button>
       <GoogleSignInButton next={searchParams.get("next")} />
       <p style={{ margin: 0, fontSize: ".85rem" }}>
-        New here? <Link href="/signup">Create an account</Link>
+        New here? <Link href="/signup">Create an account</Link>{" · "}
+        <Link href="/forgot-password">Forgot password?</Link>
       </p>
     </form>
   );
