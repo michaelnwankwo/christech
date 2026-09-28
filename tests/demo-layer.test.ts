@@ -5,7 +5,12 @@
 // and a uuid-shaped quoteId so shared validation is exercised too.
 
 import { describe, expect, it, afterEach, vi } from "vitest";
-import { demoActive, demoOptIn, supabaseConfigured } from "@/lib/demo/policy";
+import {
+  demoActive,
+  demoEligible,
+  demoOptIn,
+  supabaseConfigured,
+} from "@/lib/demo/policy";
 import {
   demoBookingServices,
   demoListProductCards,
@@ -69,18 +74,18 @@ function quoteWith(lines: CheckoutLineInput[], overrides: object = {}) {
 describe("demo catalog mirrors SQL read semantics", () => {
   it("lists the seeded catalog with page size 12 and exact total", () => {
     const r = demoListProductCards({ page: 1 });
-    expect(r.totalCount).toBe(10);
+    expect(r.totalCount).toBe(30);
     expect(r.pageSize).toBe(12);
-    expect(r.cards).toHaveLength(10);
+    expect(r.cards).toHaveLength(12);
   });
 
   it("applies category + brand + usage AND semantics", () => {
     expect(
       demoListProductCards({ category: "cameras", brand: ["Hikvision"] }).cards
-    ).toHaveLength(1);
+    ).toHaveLength(3);
 
     const both = demoListProductCards({ usage: ["cctv", "poe"] });
-    expect(both.totalCount).toBe(3); // HK dome, Dahua bullet, Dintek switch
+    expect(both.totalCount).toBe(11);
   });
 
   it("filters by price window and availability", () => {
@@ -296,8 +301,18 @@ describe("demo policy flags", () => {
     expect(demoOptIn()).toBe(true);
   });
 
-  it("no Supabase keys ⇒ demo is active regardless of opt-in", () => {
+  it("no Supabase keys activate demo in non-production only", () => {
     expect(supabaseConfigured()).toBe(false); // test env has no keys
     expect(demoActive()).toBe(true);
+  });
+
+  it("production never permits demo fallback, even with stale flags", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("DEMO_FALLBACK", "1");
+    vi.stubEnv("NEXT_PUBLIC_USE_DEMO_DATA", "true");
+    vi.stubEnv("USE_DEMO_DATA", "true");
+    expect(demoOptIn()).toBe(true); // flags parse, but cannot override policy
+    expect(demoEligible()).toBe(false);
+    expect(demoActive()).toBe(false);
   });
 });

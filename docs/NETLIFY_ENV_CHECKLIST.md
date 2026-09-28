@@ -11,9 +11,9 @@ chrisviscustech`.
 | NEXT_PUBLIC_SUPABASE_ANON_KEY | the anon public key | no | yes |
 | NEXT_PUBLIC_APP_URL | https://chrisviscustech.netlify.app | no | yes |
 | NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY | pk_live_… (the .env.local ones are dummies) | no | yes |
-| NEXT_PUBLIC_USE_DEMO_DATA | "true"/"false" (public demo switch) | no | yes |
+| NEXT_PUBLIC_USE_DEMO_DATA | development-only demo switch; leave false in production | no | yes |
 | NEXT_PUBLIC_AUTH_GOOGLE_ENABLED | "true" only after Supabase Google provider is configured | no | yes |
-| USE_DEMO_DATA | server-side override, read at request time | yes-ish, harmless either way | no |
+| USE_DEMO_DATA | development-only server demo switch; ignored in production | yes-ish, harmless either way | no |
 | SUPABASE_SERVICE_ROLE_KEY | only needed by server jobs — the web app never reads it | YES | no |
 | PAYSTACK_SECRET_KEY | sk_live_… | YES | no |
 | CRON_SECRET | long random string (api/jobs) | YES | no |

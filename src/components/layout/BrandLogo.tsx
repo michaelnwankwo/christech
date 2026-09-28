@@ -30,7 +30,7 @@ export function BrandLogo() {
 }
 
 /** Compact monogram (footer/zero-network fallback) — redrawn to match the
- *  uploaded mark: brand-blue rounded square, white hook, nested C ring. */
+ *  uploaded mark: brand-red rounded square, white hook, nested C ring. */
 export function BrandMonogram() {
   return (
     <svg
@@ -41,14 +41,14 @@ export function BrandMonogram() {
       role="img"
       aria-label="Chrisviscus Technologies mark"
     >
-      <rect x="4" y="4" width="92" height="92" rx="26" fill="#1049d6" />
+      <rect x="4" y="4" width="92" height="92" rx="26" fill="#D32F2F" />
       <path
         d="M42 10 V48 a26 26 0 0 0 26 26 H96 V64 H74 a16 16 0 0 1 -16 -16 V10 Z"
-        fill="#ffffff"
+        fill="#FFFFFF"
       />
       <path
         d="M78 20 a17 17 0 1 0 12 29 h6 v-9 h-6 a8 8 0 1 1 -6 -13 Z"
-        fill="#ffffff"
+        fill="#FFFFFF"
       />
     </svg>
   );

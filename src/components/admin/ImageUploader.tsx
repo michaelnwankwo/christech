@@ -141,7 +141,7 @@ export function ImageUploader({
         onDragLeave={() => setDragOver(false)}
         onDrop={(e) => { e.preventDefault(); setDragOver(false); void handleFiles(e.dataTransfer.files); }}
         style={{
-          border: `2px dashed ${dragOver ? "var(--color-accent, #0a7)" : "var(--border-subtle, #bbb)"}`,
+          border: `2px dashed ${dragOver ? "var(--color-accent, #E53935)" : "var(--border-subtle, #940128)"}`,
           borderRadius: 10, padding: "1rem", textAlign: "center", cursor: "pointer",
           fontSize: ".85rem", color: "inherit",
         }}
@@ -163,7 +163,7 @@ export function ImageUploader({
       {entries.length > 0 ? (
         <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))", gap: ".5rem" }}>
           {entries.map((e, i) => (
-            <li key={`${e.url}-${i}`} style={{ position: "relative", border: "1px solid var(--border-subtle, #ddd)", borderRadius: 8, overflow: "hidden" }}>
+            <li key={`${e.url}-${i}`} style={{ position: "relative", border: "1px solid var(--border-subtle, #940128)", borderRadius: 8, overflow: "hidden" }}>
               {/* Plain <img>: admin previews must not depend on next/image remotePatterns. */}
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={e.url} alt="" style={{ width: "100%", height: 90, objectFit: "cover", display: "block" }} />

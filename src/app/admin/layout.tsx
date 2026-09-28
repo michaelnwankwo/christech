@@ -37,7 +37,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         style={{
           display: "flex", alignItems: "center", justifyContent: "space-between",
           gap: "1rem", flexWrap: "wrap", paddingBottom: "1rem",
-          borderBottom: "1px dashed var(--border-subtle, #ddd)",
+          borderBottom: "1px dashed var(--border-subtle, #940128)",
         }}
       >
         <strong>Chrisviscus — Admin</strong>

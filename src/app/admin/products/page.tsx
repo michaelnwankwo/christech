@@ -37,7 +37,7 @@ export default async function AdminProductsPage() {
       ) : (
         <table style={{ width: "100%", borderCollapse: "collapse", marginTop: "1rem", fontSize: ".9rem" }}>
           <thead>
-            <tr style={{ textAlign: "left", borderBottom: "1px solid var(--border-subtle, #ccc)" }}>
+            <tr style={{ textAlign: "left", borderBottom: "1px solid var(--border-subtle, #940128)" }}>
               <th style={{ padding: ".45rem .4rem" }}>Product</th>
               <th style={{ padding: ".45rem .4rem" }}>Category</th>
               <th style={{ padding: ".45rem .4rem", textAlign: "right" }}>Price (₦)</th>
@@ -48,7 +48,7 @@ export default async function AdminProductsPage() {
           </thead>
           <tbody>
             {products.map((p) => (
-              <tr key={String(p.id)} style={{ borderBottom: "1px dashed var(--border-subtle, #ddd)" }}>
+              <tr key={String(p.id)} style={{ borderBottom: "1px dashed var(--border-subtle, #940128)" }}>
                 <td style={{ padding: ".45rem .4rem" }}>
                   <strong>{String(p.name)}</strong>
                   <div className="muted" style={{ fontSize: ".78rem" }}>

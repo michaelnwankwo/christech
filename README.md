@@ -123,13 +123,13 @@ by contract. The uploaded logo lives at `public/brand/chrisviscus-logo.png`
 
 ## Offline demo layer (`src/lib/demo/`)
 
-When Supabase is unconfigured or unreachable, every page, cart flow, quote,
-and booking form renders from `src/lib/demo/data.ts` — a mirror of the
-0007 seed (same SKUs, prices, zones, rate card) — behind a visible
+In development, when Supabase is unconfigured or unreachable, pages, cart
+flow, quotes and booking render from `src/lib/demo/data.ts` behind a visible
 "Demo data" banner. Policy:
 
 - dev (`npm run dev`): fallback activates automatically on any DB failure;
-- production: activates ONLY with `DEMO_FALLBACK=1` (staging smoke tests);
+- production: demo fallback is prohibited even if a stale demo flag is set;
+  missing credentials or database downtime fail visibly instead of serving fixtures;
 - money stays honest: demo quotes re-price from the server-side catalog copy
   (clients send ids + quantities only), `/api/checkout/initialize` refuses
   demo callers with 503 (Paystack never sees demo money), and demo quotes,

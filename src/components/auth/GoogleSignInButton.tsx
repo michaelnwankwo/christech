@@ -68,13 +68,13 @@ export function GoogleSignInButton({ next }: { next?: string | null }) {
       <div
         style={{
           display: "flex", alignItems: "center", gap: ".6rem",
-          color: "var(--color-text-muted, #666)", fontSize: ".75rem",
+          color: "var(--color-text-muted, #A1A1AA)", fontSize: ".75rem",
         }}
         aria-hidden="true"
       >
-        <span style={{ flex: 1, borderTop: "1px dashed var(--border-subtle, #ddd)" }} />
+        <span style={{ flex: 1, borderTop: "1px dashed var(--border-subtle, #940128)" }} />
         or
-        <span style={{ flex: 1, borderTop: "1px dashed var(--border-subtle, #ddd)" }} />
+        <span style={{ flex: 1, borderTop: "1px dashed var(--border-subtle, #940128)" }} />
       </div>
       <button
         type="button"

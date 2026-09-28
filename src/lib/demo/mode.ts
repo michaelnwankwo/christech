@@ -27,9 +27,10 @@ export {
  * request even when the layout, pages, and an API route all ask.
  */
 export const databaseUnavailable = cache(async (): Promise<boolean> => {
-  // Keys absent ⇒ demo everywhere (policy rule 1), even in production.
-  if (!supabaseConfigured()) return true;
+  // Production is fail-closed before inspecting credentials: missing or bad
+  // live configuration must surface an error, never static fixture data.
   if (!demoEligible()) return false;
+  if (!supabaseConfigured()) return true;
   try {
     const supabase = await createServerSupabaseClient();
     return await probeDatabaseUnavailable(supabase);
@@ -46,10 +47,10 @@ export async function withDemoFallback<T>(
   run: () => Promise<T>,
   demoFallback: () => T
 ): Promise<T> {
-  // Staging skeleton with no keys: mock data instead of a config throw —
-  // this is what makes a fresh Netlify deploy show the local demo catalog.
-  if (!supabaseConfigured()) return demoFallback();
+  // Check the environment first. A production deployment always executes the
+  // live path, so absent credentials or downtime fail visibly.
   if (!demoEligible()) return run();
+  if (!supabaseConfigured()) return demoFallback();
   if (await databaseUnavailable()) return demoFallback();
   try {
     return await run();

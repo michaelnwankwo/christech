@@ -1,9 +1,8 @@
 // src/lib/demo/policy.ts
 // Demo-mode policy — EDGE-SAFE by design (no server-only import, no
 // next/headers, no React). Imported by BOTH middleware (edge runtime) and
-// server modules. The fail-safe rule: production without DEMO_FALLBACK=1
-// never serves mock data; everything else treats "database unreachable"
-// as "render the offline catalog."
+// server modules. Production is fail-closed: it never serves mock data,
+// even if a stale demo flag is present. Demo fallback is development-only.
 
 import { getSupabasePublicEnv } from "@/lib/supabase/config";
 
@@ -21,19 +20,21 @@ export function demoOptIn(): boolean {
   );
 }
 
-/** Is falling back to demo data ALLOWED in this environment at all? */
+/** Is falling back to demo data ALLOWED in this environment at all?
+ * Production always returns false so bad/missing live credentials fail loudly
+ * instead of silently routing storefront traffic to static fixtures. */
 export function demoEligible(): boolean {
-  return process.env.NODE_ENV !== "production" || demoOptIn();
+  return process.env.NODE_ENV !== "production";
 }
 
 export function supabaseConfigured(): boolean {
   return getSupabasePublicEnv() !== null;
 }
 
-/** Demo serving allowed for THIS request: explicit opt-in, or simply no
- *  Supabase keys at all (rule 1 of the policy header). */
+/** Whether this environment may serve demo data at all. Production is never
+ * active; development activates when credentials are absent or a flag opts in. */
 export function demoActive(): boolean {
-  return !supabaseConfigured() || demoEligible();
+  return demoEligible() && (!supabaseConfigured() || demoOptIn());
 }
 
 /** 2.5 s cap — supabase-js has no request timeout of its own. */

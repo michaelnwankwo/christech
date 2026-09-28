@@ -1,37 +1,41 @@
 // src/app/api/health/route.ts — public, secret-free ops probe.
-// Existence: it distinguishes the two failures that otherwise look
-// identical to the storefront ("No products match…"): unconfigured env vs
-// a reachable-but-broken/empty database. Returns booleans, counts and
-// error CODES only — never keys, never rows, never user data.
+// Distinguishes live Supabase from the static demo fallback. Returns only a
+// project reference, booleans, counts and error codes — never keys or rows.
 import { NextResponse } from "next/server";
 import { getSupabasePublicEnv } from "@/lib/supabase/config";
-import { demoActive, demoEligible } from "@/lib/demo/policy";
+import { demoEligible } from "@/lib/demo/policy";
+import { databaseUnavailable } from "@/lib/demo/mode";
 
 export const dynamic = "force-dynamic";
 
+function projectRef(url: string): string {
+  return new URL(url).hostname.split(".")[0] ?? "unknown";
+}
+
 export async function GET() {
   const env = getSupabasePublicEnv();
+  const unavailable = await databaseUnavailable();
   const snapshot = {
     ok: false as boolean,
+    mode: unavailable ? "demo" : env ? "live" : "misconfigured",
     env: {
       supabasePublicEnvConfigured: env !== null,
+      supabaseProjectRef: env ? projectRef(env.url) : null,
       demoFallbackAllowed: demoEligible(),
-      demoActive: demoActive(),
+      demoActive: unavailable,
     },
   };
 
-  if (!env) {
-    // Policy rule 1: no keys ⇒ deliberate staging skeleton serving the
-    // offline demo catalog. Still NOT ok:true-as-production — mode:"demo"
-    // tells ops exactly why the numbers are mock.
+  if (unavailable) {
     const { demoListProductCards } = await import("@/lib/demo/catalog");
     return NextResponse.json(
       {
         ...snapshot,
         ok: true,
-        mode: "demo",
         catalog: { activeProducts: demoListProductCards({}).totalCount },
-        note: "NEXT_PUBLIC_SUPABASE_URL / ANON_KEY not set on this deployment — serving the demo catalog. Set the keys (and optionally NEXT_PUBLIC_USE_DEMO_DATA=false) and redeploy for live data.",
+        note: env
+          ? "Supabase is configured but unreachable; the deployment is serving the static demo catalog."
+          : "NEXT_PUBLIC_SUPABASE_URL / ANON_KEY are not configured; the deployment is serving the static demo catalog.",
       },
       { status: 200, headers: { "Cache-Control": "no-store" } }
     );
@@ -57,7 +61,7 @@ export async function GET() {
           ).slice(0, 180)}`,
           hint:
             productsError.code === "42P01"
-              ? "migrations 0001–0008 not applied on this project"
+              ? "migrations 0001–0010 not applied on this project"
               : productsError.code === "PGRST204"
                 ? "column missing — apply 0008_catalog_cart.sql"
                 : undefined,
@@ -66,7 +70,6 @@ export async function GET() {
       );
     }
 
-    // Cheap probe of migration 0008's generated column (42703 = not applied).
     const { error: colError } = await supabase
       .from("products")
       .select("in_stock")
@@ -74,8 +77,8 @@ export async function GET() {
 
     return NextResponse.json(
       {
+        ...snapshot,
         ok: true,
-        env: snapshot.env,
         catalog: {
           activeProducts: activeProducts ?? 0,
           migration0008InStockColumn: colError ? "missing" : "present",

@@ -10,7 +10,8 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:db": "bash scripts/db-verify.sh"
+    "test:db": "bash scripts/db-verify.sh",
+    "test:colors": "node scripts/check-brand-colors.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.6.1",
