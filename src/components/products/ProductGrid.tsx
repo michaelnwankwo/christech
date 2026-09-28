@@ -43,13 +43,8 @@ export function ProductGrid({ cards }: { cards: ProductCard[] }) {
               <Link href={`/products/${card.slug}`}>{card.name}</Link>
             </h3>
             <div className="product-card__meta">
-              <span className="chip">{card.brand}</span>
-              <span className="chip">{card.category}</span>
-              {card.inventoryQty > 0 ? (
-                <span className="chip chip--success">In stock</span>
-              ) : (
-                <span className="chip chip--danger">Out of stock</span>
-              )}
+              <span className="product-card__badge">{card.brand}</span>
+              <span className="product-card__badge">{card.category}</span>
             </div>
             <div className="product-card__foot">
               <CurrencyPrice amountMinor={card.unitPriceMinor} />
@@ -67,6 +62,7 @@ export function ProductGrid({ cards }: { cards: ProductCard[] }) {
                   ...a,
                   durationMinutes: null,
                 }))}
+                card
               />
             </div>
           </div>
