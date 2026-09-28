@@ -225,10 +225,12 @@ export async function pushCart(
   lines: CartLine[]
 ): Promise<void> {
   const rows = linesToSyncRows(lines);
+  // Supabase/PostgREST's onConflict option accepts a comma-separated column
+  // list, not a PostgreSQL index name. Passing the *_uidx name causes
+  // PostgREST to emit ON CONFLICT ("cart_items_user_product_uidx"), which
+  // PostgreSQL rejects as an undefined column (42703).
   const onConflict =
-    owner.kind === "user"
-      ? "cart_items_user_product_uidx"
-      : "cart_items_session_product_uidx";
+    owner.kind === "user" ? "user_id,product_id" : "session_id,product_id";
 
   const payloads = rows.map((r) =>
     owner.kind === "user"
