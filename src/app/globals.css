@@ -11,7 +11,7 @@
   color-scheme: light;
 
   --color-primary: #D32F2F;
-  --color-primary-hover: #E53935;
+  --color-primary-hover: #B71C1C;
   --color-app-bg: #f8fafc;
   --color-surface: #ffffff;
   --color-text: #0f172a;
@@ -145,7 +145,13 @@ a:hover { text-decoration: underline; }
   font-size: .83rem; font-weight: 600; color: var(--text-muted);
 }
 .mode-switch button[aria-pressed="true"] {
-  background: var(--color-primary); color: #fff;
+  background: var(--color-primary);
+  color: #fff;
+  font-weight: 600;
+}
+.mode-switch button[aria-pressed="true"]:hover {
+  background: var(--color-primary-hover);
+  color: #fff;
 }
 
 /* buttons, chips, forms */
@@ -153,16 +159,42 @@ a:hover { text-decoration: underline; }
   display: inline-flex; align-items: center; justify-content: center; gap: .45rem;
   border-radius: .6rem; border: 1px solid var(--color-primary);
   background: var(--color-primary); color: #fff;
-  padding: .55rem 1rem; font-weight: 600; font-size: .9rem;
-  cursor: pointer; transition: filter .12s ease;
+  padding: .55rem 1rem; font-weight: 700; font-size: .9rem;
+  cursor: pointer;
+  transition: background-color .12s ease, border-color .12s ease, color .12s ease;
 }
+/* Solid CTAs must never inherit the global anchor hover colour. */
+.btn:link, .btn:visited { color: #fff; }
 .btn:hover:not(:disabled) {
   background: var(--color-primary-hover);
   border-color: var(--color-primary-hover);
+  color: #fff;
+  text-decoration: none;
 }
 .btn:disabled { opacity: .55; cursor: not-allowed; }
-.btn--secondary { background: var(--color-surface); color: var(--color-primary); }
-.btn--ghost { background: transparent; border-color: transparent; color: var(--color-primary); }
+.btn--secondary,
+.btn--secondary:link,
+.btn--secondary:visited {
+  background: var(--color-surface);
+  color: var(--color-primary);
+}
+.btn--secondary:hover:not(:disabled) {
+  background: #fdf2f2;
+  border-color: var(--color-primary-hover);
+  color: #940128;
+}
+.btn--ghost,
+.btn--ghost:link,
+.btn--ghost:visited {
+  background: transparent;
+  border-color: transparent;
+  color: var(--color-primary);
+}
+.btn--ghost:hover:not(:disabled) {
+  background: #fdf2f2;
+  border-color: transparent;
+  color: #940128;
+}
 .btn--danger { background: var(--color-warning); border-color: var(--color-warning); color: #fff; }
 .btn--sm { padding: .3rem .65rem; font-size: .8rem; }
 .btn--block { width: 100%; }

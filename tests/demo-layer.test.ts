@@ -72,11 +72,11 @@ function quoteWith(lines: CheckoutLineInput[], overrides: object = {}) {
 }
 
 describe("demo catalog mirrors SQL read semantics", () => {
-  it("lists the seeded catalog with page size 12 and exact total", () => {
+  it("lists all 30 seeded products within the storefront's 50-row window", () => {
     const r = demoListProductCards({ page: 1 });
     expect(r.totalCount).toBe(30);
-    expect(r.pageSize).toBe(12);
-    expect(r.cards).toHaveLength(12);
+    expect(r.pageSize).toBe(50);
+    expect(r.cards).toHaveLength(30);
   });
 
   it("applies category + brand + usage AND semantics", () => {

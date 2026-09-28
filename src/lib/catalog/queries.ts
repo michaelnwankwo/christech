@@ -34,7 +34,10 @@ export type ProductFilters = {
   page?: number;
 };
 
-const PAGE_SIZE = 12;
+// Keep the first storefront response large enough for the complete curated
+// catalog. Supabase/PostgREST otherwise defaults to a server-side cap and the
+// former 12-row page made successfully seeded products look missing.
+const PAGE_SIZE = 50;
 
 /** Add-on services are global, so "attach to card" = list once per page. */
 export const listProductCards = cache(

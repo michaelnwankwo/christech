@@ -1,7 +1,7 @@
 // src/lib/demo/catalog.ts
 // Pure demo-catalog reads — the exact filter/pagination semantics the SQL
 // path applies (category, brands, usage ⊇, availability, price window, page
-// size 12), so the offline UI behaves identically. Dependency-free (the
+// size 50), so the offline UI behaves identically. Dependency-free (the
 // ProductFilters import is type-only and erased) → unit-testable with
 // vitest even though the real queries module is server-only.
 
@@ -9,7 +9,7 @@ import type { ProductCard, ProductDetail, ServiceVM } from "@/types/catalog";
 import type { ProductFilters } from "@/lib/catalog/queries";
 import { DEMO_PRODUCTS, DEMO_SERVICES } from "./data";
 
-export const DEMO_PAGE_SIZE = 12;
+export const DEMO_PAGE_SIZE = 50;
 
 export function demoListProductCards(filters: ProductFilters): {
   cards: ProductCard[];
