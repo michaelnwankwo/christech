@@ -62,13 +62,18 @@ export async function POST(request: Request) {
   try {
     fx = await resolveFxRates();
   } catch (error) {
-    if (error instanceof FxUnavailableError) {
-      return NextResponse.json(
-        { error: "Exchange rates are temporarily unavailable; retry shortly" },
-        { status: 503 }
-      );
-    }
-    throw error;
+    log.error("quote.fx_lookup_failed", {
+      error: error instanceof Error ? error.message : "unknown",
+    });
+    return NextResponse.json(
+      {
+        error:
+          error instanceof FxUnavailableError
+            ? "Exchange rates are temporarily unavailable; retry shortly"
+            : "Unable to prepare the shipping quote; retry shortly",
+      },
+      { status: 503 }
+    );
   }
 
   const chargeCurrency = resolvePaystackChargeCurrency(displayCurrency);
@@ -88,47 +93,67 @@ export async function POST(request: Request) {
     );
   }
 
-  const supabase = await createServerSupabaseClient();
+  try {
+    const supabase = await createServerSupabaseClient();
 
-  // (1)(3)-(9)(13)-(14): validation, catalog math, rounding, and persistence
-  // all happen inside the definer RPC under the CALLER's JWT (auth.uid()).
-  const { data, error } = await supabase.rpc("create_quote", {
-    p_lines: lines,
-    p_address: address,
-    p_display_currency: displayCurrency,
-    p_charge_currency: chargeCurrency,
-    p_base_to_display: rateDisplay,
-    p_base_to_charge: rateCharge,
-    p_rate_provider: fx.provider,
-    p_ttl_seconds: Number(process.env.CHECKOUT_QUOTE_TTL_SECONDS ?? 600),
-  });
+    // (1)(3)-(9)(13)-(14): validation, catalog math, fallback shipping-tier
+    // lookup, rounding, and persistence happen inside the definer RPC under
+    // the CALLER's JWT (auth.uid()). The address has already been canonicalized
+    // by shippingAddressSchema, so quote and initialize hash the same payload.
+    const { data, error } = await supabase.rpc("create_quote", {
+      p_lines: lines,
+      p_address: address,
+      p_display_currency: displayCurrency,
+      p_charge_currency: chargeCurrency,
+      p_base_to_display: rateDisplay,
+      p_base_to_charge: rateCharge,
+      p_rate_provider: fx.provider,
+      p_ttl_seconds: Number(process.env.CHECKOUT_QUOTE_TTL_SECONDS ?? 600),
+    });
 
-  if (error || !data?.[0]) {
-    const mapped = clientSafeDbError(
-      error ?? { code: "P0001", message: "Quote could not be created" }
+    if (error || !data?.[0]) {
+      const mapped = clientSafeDbError(
+        error ?? { code: "P0001", message: "Quote could not be created" }
+      );
+      log.warn("quote.rejected", {
+        code: error?.code ?? "no_data",
+        country: address.country,
+        state: address.state,
+        city: address.city,
+      });
+      return NextResponse.json({ error: mapped.message }, { status: mapped.status });
+    }
+
+    const row = data[0] as Record<string, string | number | null>;
+
+    // (15) Client response — the §12.2 shape, minor units + disclosure.
+    const quote: QuoteResponse = {
+      quoteId: String(row.quote_id),
+      displayCurrency: String(row.display_currency) as QuoteResponse["displayCurrency"],
+      chargeCurrency: String(row.charge_currency) as QuoteResponse["chargeCurrency"],
+      subtotalDisplayMinor: Number(row.subtotal_display_minor),
+      shippingDisplayMinor: Number(row.shipping_display_minor),
+      totalDisplayMinor: Number(row.total_display_minor),
+      totalChargeMinor: Number(row.total_charge_minor),
+      zoneCode: String(row.zone_code),
+      expiresAt: new Date(String(row.expires_at)).toISOString(),
+      conversionDisclosure: buildConversionDisclosure(
+        String(row.display_currency) as QuoteResponse["displayCurrency"],
+        String(row.charge_currency) as QuoteResponse["chargeCurrency"]
+      ),
+    };
+
+    return NextResponse.json(quote);
+  } catch (error) {
+    log.error("quote.processing_failed", {
+      error: error instanceof Error ? error.message : "unknown",
+      country: address.country,
+      state: address.state,
+      city: address.city,
+    });
+    return NextResponse.json(
+      { error: "Shipping quote is temporarily unavailable; please retry" },
+      { status: 503 }
     );
-    log.warn("quote.rejected", { code: error?.code ?? "no_data" });
-    return NextResponse.json({ error: mapped.message }, { status: mapped.status });
   }
-
-  const row = data[0] as Record<string, string | number | null>;
-
-  // (15) Client response — the §12.2 shape, minor units + disclosure.
-  const quote: QuoteResponse = {
-    quoteId: String(row.quote_id),
-    displayCurrency: String(row.display_currency) as QuoteResponse["displayCurrency"],
-    chargeCurrency: String(row.charge_currency) as QuoteResponse["chargeCurrency"],
-    subtotalDisplayMinor: Number(row.subtotal_display_minor),
-    shippingDisplayMinor: Number(row.shipping_display_minor),
-    totalDisplayMinor: Number(row.total_display_minor),
-    totalChargeMinor: Number(row.total_charge_minor),
-    zoneCode: String(row.zone_code),
-    expiresAt: new Date(String(row.expires_at)).toISOString(),
-    conversionDisclosure: buildConversionDisclosure(
-      String(row.display_currency) as QuoteResponse["displayCurrency"],
-      String(row.charge_currency) as QuoteResponse["chargeCurrency"]
-    ),
-  };
-
-  return NextResponse.json(quote);
 }

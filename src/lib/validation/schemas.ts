@@ -5,6 +5,7 @@
 
 import { z } from "zod";
 import { CURRENCY_CODES } from "@/types/catalog";
+import { normalizeShippingAddressInput } from "@/lib/shipping/zones";
 
 export const uuidSchema = z
   .string()
@@ -13,14 +14,16 @@ export const uuidSchema = z
     "Must be a UUID"
   );
 
-export const shippingAddressSchema = z.object({
-  country: z.string().trim().length(2, "Use an ISO 3166-1 alpha-2 code"),
-  state: z.string().trim().min(2).max(80),
-  city: z.string().trim().min(2).max(80),
-  addressLine1: z.string().trim().min(5).max(240),
-  addressLine2: z.string().trim().max(240).optional(),
-  postalCode: z.string().trim().max(16).optional(),
-});
+export const shippingAddressSchema = z
+  .object({
+    country: z.string().trim().length(2, "Use an ISO 3166-1 alpha-2 code"),
+    state: z.string().trim().min(2).max(80),
+    city: z.string().trim().min(2).max(80),
+    addressLine1: z.string().trim().min(5).max(240),
+    addressLine2: z.string().trim().max(240).optional(),
+    postalCode: z.string().trim().max(16).optional(),
+  })
+  .transform(normalizeShippingAddressInput);
 
 export const checkoutLineSchema = z
   .object({

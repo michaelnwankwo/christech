@@ -12,7 +12,7 @@ import {
   type MouseEvent,
 } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useCartStore } from "@/stores/cart-store";
 import { useStorefrontStore } from "@/stores/storefront-store";
 import { CartLineItem } from "./CartLineItem";
@@ -28,6 +28,7 @@ export function CartDrawer() {
   const close = useStorefrontStore((s) => s.closeCart);
 
   const router = useRouter();
+  const pathname = usePathname();
   // Checkout nav is a REAL server round-trip (the /checkout RSC payload);
   // clearing the cart is a local store mutation. Both are wrapped the same
   // way: the branded spinner is driven by React's own pending state, so the
@@ -38,6 +39,14 @@ export function CartDrawer() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
+  // Route changes can also originate outside this drawer (cart page,
+  // browser history, redirects). Checkout must never inherit an open sheet.
+  useEffect(() => {
+    if (pathname === "/checkout" || pathname.startsWith("/checkout/")) {
+      close();
+    }
+  }, [pathname, close]);
+
   const goToCheckout = useCallback(
     (event: MouseEvent<HTMLAnchorElement>) => {
       if (!mounted || lines.length === 0) {
@@ -45,9 +54,13 @@ export function CartDrawer() {
         return;
       }
       event.preventDefault();
+      // Flip store state before routing so the existing translateX(100%)
+      // transition starts immediately instead of leaving the drawer mounted
+      // over the checkout page.
+      close();
       startNav(() => router.push("/checkout"));
     },
-    [mounted, lines.length, router, startNav]
+    [mounted, lines.length, close, router, startNav]
   );
 
   useEffect(() => {

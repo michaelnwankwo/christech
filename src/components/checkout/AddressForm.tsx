@@ -6,6 +6,7 @@
 
 import { useState } from "react";
 import type { ShippingAddress } from "@/types/checkout";
+import { normalizeShippingAddressInput } from "@/lib/shipping/zones";
 
 const NG_STATES = [
   "Abia","Adamawa","Akwa Ibom","Anambra","Bauchi","Bayelsa","Benue","Borno",
@@ -49,70 +50,74 @@ export function ShippingAddressForm(props: {
 
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length === 0) {
-      props.onSubmit({
-        ...values,
-        addressLine2: values.addressLine2?.trim() || undefined,
-        postalCode: values.postalCode?.trim() || undefined,
-      });
+      props.onSubmit(normalizeShippingAddressInput(values));
     }
   }
 
   return (
-    <form onSubmit={submit} className="form-grid" aria-label="Shipping address">
-      <div className="field">
-        <label htmlFor="country">Country code</label>
-        <input
-          id="country"
-          value={values.country}
-          onChange={(e) => set("country", e.target.value.toUpperCase())}
-          maxLength={2}
-          aria-invalid={Boolean(errors.country)}
-          required
-        />
-        {errors.country ? <span className="field__error">{errors.country}</span> : null}
+    <form onSubmit={submit} className="checkout-address-form" aria-label="Shipping address">
+      <div className="checkout-address-row">
+        <div className="field">
+          <label htmlFor="country">Country code</label>
+          <input
+            id="country"
+            value={values.country}
+            onChange={(e) => set("country", e.target.value.toUpperCase())}
+            maxLength={2}
+            aria-invalid={Boolean(errors.country)}
+            autoComplete="country"
+            required
+          />
+          {errors.country ? <span className="field__error">{errors.country}</span> : null}
+        </div>
+
+        <div className="field">
+          <label htmlFor="state">State</label>
+          <select
+            id="state"
+            value={values.state}
+            onChange={(e) => set("state", e.target.value)}
+            aria-invalid={Boolean(errors.state)}
+            autoComplete="address-level1"
+          >
+            {NG_STATES.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
+          {errors.state ? <span className="field__error">{errors.state}</span> : null}
+        </div>
+      </div>
+
+      <div className="checkout-address-row">
+        <div className="field">
+          <label htmlFor="city">City / LGA</label>
+          <input
+            id="city"
+            value={values.city}
+            onChange={(e) => set("city", e.target.value)}
+            placeholder="e.g. Ikeja, Lekki Phase 1"
+            aria-invalid={Boolean(errors.city)}
+            autoComplete="address-level2"
+            required
+          />
+          {errors.city ? <span className="field__error">{errors.city}</span> : null}
+        </div>
+
+        <div className="field">
+          <label htmlFor="postal">Postal code (optional)</label>
+          <input
+            id="postal"
+            value={values.postalCode ?? ""}
+            onChange={(e) => set("postalCode", e.target.value)}
+            maxLength={16}
+            autoComplete="postal-code"
+          />
+        </div>
       </div>
 
       <div className="field">
-        <label htmlFor="state">State</label>
-        <select
-          id="state"
-          value={values.state}
-          onChange={(e) => set("state", e.target.value)}
-          aria-invalid={Boolean(errors.state)}
-        >
-          {NG_STATES.map((s) => (
-            <option key={s} value={s}>
-              {s}
-            </option>
-          ))}
-        </select>
-        {errors.state ? <span className="field__error">{errors.state}</span> : null}
-      </div>
-
-      <div className="field">
-        <label htmlFor="city">City / LGA</label>
-        <input
-          id="city"
-          value={values.city}
-          onChange={(e) => set("city", e.target.value)}
-          placeholder="e.g. Ikeja, Lekki Phase 1"
-          aria-invalid={Boolean(errors.city)}
-          required
-        />
-        {errors.city ? <span className="field__error">{errors.city}</span> : null}
-      </div>
-
-      <div className="field">
-        <label htmlFor="postal">Postal code (optional)</label>
-        <input
-          id="postal"
-          value={values.postalCode ?? ""}
-          onChange={(e) => set("postalCode", e.target.value)}
-          maxLength={16}
-        />
-      </div>
-
-      <div className="field span-2">
         <label htmlFor="line1">Address line 1</label>
         <input
           id="line1"
@@ -120,6 +125,7 @@ export function ShippingAddressForm(props: {
           onChange={(e) => set("addressLine1", e.target.value)}
           placeholder="Street, number, area"
           aria-invalid={Boolean(errors.addressLine1)}
+          autoComplete="address-line1"
           required
         />
         {errors.addressLine1 ? (
@@ -127,17 +133,18 @@ export function ShippingAddressForm(props: {
         ) : null}
       </div>
 
-      <div className="field span-2">
+      <div className="field">
         <label htmlFor="line2">Address line 2 (optional)</label>
         <input
           id="line2"
           value={values.addressLine2 ?? ""}
           onChange={(e) => set("addressLine2", e.target.value)}
           maxLength={240}
+          autoComplete="address-line2"
         />
       </div>
 
-      <div className="span-2">
+      <div className="checkout-address-actions">
         <button type="submit" className="btn" disabled={props.busy}>
           {props.busy ? "Calculating quote…" : "Get shipping & currency quote"}
         </button>

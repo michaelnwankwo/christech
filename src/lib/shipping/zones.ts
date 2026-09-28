@@ -3,6 +3,8 @@
 // ONLY to render a friendly "Ships to <zone>" label. The database resolver
 // remains the authority; if the two ever drift, quotes still use the DB.
 
+import type { ShippingAddress } from "@/types/checkout";
+
 const ISLAND_CITY_KEYWORDS = [
   "lekki",
   "ikoyi",
@@ -37,6 +39,48 @@ const NORTHERN_STATES = new Set([
   "yobe","jigawa","borno","adamawa","gombe","taraba","nasarawa","plateau","benue",
 ]);
 
+const squash = (value: string | undefined) =>
+  (value ?? "").trim().replace(/\s+/g, " ");
+
+/** Canonical wire shape shared by quote + initialize. This keeps address
+ * hashes stable and folds case/spacing aliases before PostgreSQL resolves a
+ * rate tier. It never changes street-address meaning. */
+export function normalizeShippingAddressInput(
+  address: ShippingAddress
+): ShippingAddress {
+  const country = squash(address.country).toUpperCase();
+  const rawState = squash(address.state);
+  const stateKey = rawState
+    .toLowerCase()
+    .replace(/[._-]+/g, " ")
+    .replace(/\s+state$/, "")
+    .trim();
+  let city = squash(address.city).replace(/\s+lga$/i, "");
+
+  let state = rawState.replace(/\s+state$/i, "");
+  if (stateKey === "lagos" || stateKey === "lagos mainland") {
+    state = "Lagos";
+  } else if (stateKey === "lagos island") {
+    state = "Lagos";
+    // Preserve the entered locality while carrying the selected island tier
+    // through the DB's city-keyword resolver.
+    if (!ISLAND_CITY_KEYWORDS.some((keyword) => city.toLowerCase().includes(keyword))) {
+      city = city ? `Victoria Island ${city}` : "Victoria Island";
+    }
+  } else if (["abuja", "fct", "f c t", "federal capital territory"].includes(stateKey)) {
+    state = "FCT";
+  }
+
+  return {
+    country,
+    state,
+    city,
+    addressLine1: squash(address.addressLine1),
+    addressLine2: squash(address.addressLine2) || undefined,
+    postalCode: squash(address.postalCode).toUpperCase() || undefined,
+  };
+}
+
 export function zoneLabelForPreview(address: {
   country?: string;
   state?: string;
@@ -48,11 +92,14 @@ export function zoneLabelForPreview(address: {
   const state = (address.state ?? "")
     .trim()
     .toLowerCase()
-    .replace(/\s+state$/, "");
-  const city = (address.city ?? "").trim().toLowerCase();
+    .replace(/[._-]+/g, " ")
+    .replace(/\s+state$/, "")
+    .replace(/\s+/g, " ");
+  const city = (address.city ?? "").trim().toLowerCase().replace(/\s+/g, " ");
 
-  if (state === "lagos") {
+  if (["lagos", "lagos mainland", "lagos island"].includes(state)) {
     const island =
+      state === "lagos island" ||
       city === "vi" ||
       city === "v.i" ||
       ISLAND_CITY_KEYWORDS.some((k) => city.includes(k));
