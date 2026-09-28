@@ -35,7 +35,7 @@ export function ProductRowActions({
         <form action={deleteAction} style={{ display: "inline" }}>
           <input type="hidden" name="id" value={id} />
           <input type="hidden" name="confirm" value="DELETE" />
-          <button type="submit" style={{ fontSize: ".8rem", color: "#940128" }}>
+          <button type="submit" style={{ fontSize: ".8rem", color: "#b00020" }}>
             Confirm delete
           </button>{" "}
           <button type="button" style={{ fontSize: ".8rem" }} onClick={() => setArmDelete(false)}>Cancel</button>

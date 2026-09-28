@@ -11,7 +11,7 @@ import { databaseUnavailable } from "@/lib/demo/mode";
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#000000",
+  themeColor: "#ffffff",
 };
 
 // The per-request CSP nonce (src/middleware.ts) must match every inline
