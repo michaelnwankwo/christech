@@ -8,7 +8,11 @@ import { NextResponse } from "next/server";
 import { preflightJson } from "@/app/api/_security";
 import { parseBody, quoteRequestSchema } from "@/lib/validation/schemas";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { resolveFxRates, FxUnavailableError } from "@/lib/currency/fx";
+import {
+  resolveFxRates,
+  FxUnavailableError,
+  type FxSnapshot,
+} from "@/lib/currency/fx";
 import {
   buildConversionDisclosure,
   resolvePaystackChargeCurrency,
@@ -17,6 +21,7 @@ import { clientSafeDbError, log } from "@/lib/logging/log";
 import { DEMO_USER_ID } from "@/lib/demo/mode";
 import { computeDemoQuote } from "@/lib/demo/quote";
 import type { QuoteResponse } from "@/types/checkout";
+import type { Currency } from "@/types/catalog";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -58,34 +63,28 @@ export async function POST(request: Request) {
   }
 
   // (10)(11)(12) display + charge resolution and CURRENT server-side rates.
-  let fx;
-  try {
-    fx = await resolveFxRates();
-  } catch (error) {
-    log.error("quote.fx_lookup_failed", {
-      error: error instanceof Error ? error.message : "unknown",
-    });
+  // NGN→NGN is an identity conversion and must not depend on network access,
+  // an API key, or pre-existing quote rows. Foreign rates prefer the provider,
+  // then MANUAL_FX_RATES (inside resolveFxRates), then fx_rate_defaults.
+  const chargeCurrency = resolvePaystackChargeCurrency(displayCurrency);
+  const fx = await resolveQuoteFx(displayCurrency, chargeCurrency);
+
+  if (!fx) {
     return NextResponse.json(
-      {
-        error:
-          error instanceof FxUnavailableError
-            ? "Exchange rates are temporarily unavailable; retry shortly"
-            : "Unable to prepare the shipping quote; retry shortly",
-      },
+      { error: "Exchange rate unavailable for the selected currency" },
       { status: 503 }
     );
   }
 
-  const chargeCurrency = resolvePaystackChargeCurrency(displayCurrency);
   const rateDisplay =
     displayCurrency === "NGN" ? 1 : fx.rates[displayCurrency];
   const rateCharge = chargeCurrency === "NGN" ? 1 : fx.rates[chargeCurrency];
 
-  if (!rateDisplay || !rateCharge) {
-    // Fail loudly; never quote with an assumed rate (test 19.2).
+  if (!isPositiveRate(rateDisplay) || !isPositiveRate(rateCharge)) {
     log.error("fx.rate_missing_at_quote", {
       displayCurrency,
       chargeCurrency,
+      provider: fx.provider,
     });
     return NextResponse.json(
       { error: "Exchange rate unavailable for the selected currency" },
@@ -117,9 +116,8 @@ export async function POST(request: Request) {
       );
       log.warn("quote.rejected", {
         code: error?.code ?? "no_data",
-        country: address.country,
-        state: address.state,
-        city: address.city,
+        displayCurrency,
+        chargeCurrency,
       });
       return NextResponse.json({ error: mapped.message }, { status: mapped.status });
     }
@@ -146,14 +144,93 @@ export async function POST(request: Request) {
     return NextResponse.json(quote);
   } catch (error) {
     log.error("quote.processing_failed", {
-      error: error instanceof Error ? error.message : "unknown",
-      country: address.country,
-      state: address.state,
-      city: address.city,
+      reason: error instanceof Error ? error.name : "unknown",
+      displayCurrency,
+      chargeCurrency,
     });
     return NextResponse.json(
       { error: "Shipping quote is temporarily unavailable; please retry" },
       { status: 503 }
     );
+  }
+}
+
+function isPositiveRate(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value) && value > 0;
+}
+
+async function resolveQuoteFx(
+  displayCurrency: Currency,
+  chargeCurrency: Currency
+): Promise<FxSnapshot | null> {
+  const required = [...new Set([displayCurrency, chargeCurrency])].filter(
+    (currency): currency is Exclude<Currency, "NGN"> => currency !== "NGN"
+  );
+
+  // Local currency parity is an invariant, not a market quote. This is the
+  // critical checkout fallback: provider/database outages cannot break NGN.
+  if (required.length === 0) {
+    return {
+      rates: { NGN: 1 },
+      provider: "local-ngn-parity",
+      fetchedAtMs: Date.now(),
+    };
+  }
+
+  try {
+    const provider = await resolveFxRates();
+    if (required.every((currency) => isPositiveRate(provider.rates[currency]))) {
+      return provider;
+    }
+    log.warn("quote.fx_provider_incomplete", {
+      displayCurrency,
+      chargeCurrency,
+      provider: provider.provider,
+    });
+  } catch (error) {
+    log.warn("quote.fx_provider_unavailable", {
+      reason: error instanceof FxUnavailableError ? "unavailable" : "unexpected",
+    });
+  }
+
+  // Optional database fallback. This is a rate-default table, not
+  // currency_quotes (which stores per-user transactional quote snapshots).
+  try {
+    const supabase = await createServerSupabaseClient();
+    const { data, error } = await supabase
+      .from("fx_rate_defaults")
+      .select("quote_currency, rate, provider, updated_at")
+      .eq("base_currency", "NGN")
+      .in("quote_currency", required);
+
+    if (error) {
+      log.warn("quote.fx_defaults_query_failed", { code: error.code ?? "unknown" });
+      return null;
+    }
+
+    const rates: FxSnapshot["rates"] = { NGN: 1 };
+    for (const row of data ?? []) {
+      const currency = String(row.quote_currency) as Currency;
+      const rate = Number(row.rate);
+      if (required.includes(currency as Exclude<Currency, "NGN">) && isPositiveRate(rate)) {
+        rates[currency] = rate;
+      }
+    }
+
+    if (!required.every((currency) => isPositiveRate(rates[currency]))) {
+      log.warn("quote.fx_defaults_incomplete", { displayCurrency, chargeCurrency });
+      return null;
+    }
+
+    return {
+      rates,
+      provider: "database-default",
+      fetchedAtMs: Date.now(),
+    };
+  } catch (error) {
+    log.error("quote.fx_defaults_exception", {
+      reason: error instanceof Error ? error.name : "unknown",
+    });
+    return null;
   }
 }

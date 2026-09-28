@@ -42,5 +42,15 @@ export function clientSafeDbError(error: {
   if (code === "23503")
     return { status: 422, message: "Referenced record is invalid" };
 
-  return { status: 400, message: "Request could not be processed" };
+  // PostgREST/PG schema errors are operational failures, not bad customer
+  // input. Surface an actionable, retry-safe response instead of the opaque
+  // "Request could not be processed" message.
+  if (["PGRST202", "42883", "42P01", "42703"].includes(code)) {
+    return {
+      status: 503,
+      message: "Checkout pricing is not initialized; site operators must apply the latest database migrations",
+    };
+  }
+
+  return { status: 400, message: "The quote could not be created; check the cart and delivery address" };
 }
