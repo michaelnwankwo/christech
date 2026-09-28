@@ -176,7 +176,6 @@ export function CheckoutPanel() {
           ) : null}
 
           <PaystackButton
-            email={user.email ?? ""}
             quote={quote}
             shippingAddress={address!}
             disabled={quote.demo === true}

@@ -8,8 +8,14 @@ import { NextResponse } from "next/server";
 import { preflightJson } from "@/app/api/_security";
 import { checkoutInitializeSchema, parseBody } from "@/lib/validation/schemas";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { DEMO_USER_ID } from "@/lib/demo/mode";
 import { clientSafeDbError, log } from "@/lib/logging/log";
+import {
+  initializeTransaction,
+  PaystackApiError,
+  type PaystackInitialization,
+} from "@/lib/payments/paystack";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -57,25 +63,142 @@ export async function POST(request: Request) {
   }
 
   const order = data[0] as Record<string, string | number | boolean>;
+  const orderId = String(order.order_id);
+  const paymentReference = String(order.payment_reference);
+  const amountMinor = Number(order.total_charge_minor);
+  const chargeCurrency = String(order.charge_currency);
+  const displayCurrency = String(order.display_currency);
 
-  const publicKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY;
-  if (!publicKey) {
-    log.error("checkout.public_key_missing");
+  // Read the server-side email snapshot and any previously initialized
+  // Paystack checkout. The latter makes an idempotent initialize retry reuse
+  // the same one-time access code instead of submitting a duplicate reference.
+  const { data: orderSnapshot, error: snapshotError } = await supabase
+    .from("orders")
+    .select("customer_email_snapshot, metadata")
+    .eq("id", orderId)
+    .maybeSingle();
+
+  if (snapshotError || !orderSnapshot) {
+    log.error("checkout.order_snapshot_missing", { orderId });
     return NextResponse.json(
-      { error: "Payments are not configured yet" },
+      { error: "The payment session could not be prepared" },
       { status: 500 }
     );
   }
 
-  // The browser charges EXACTLY these server-minted values (§2.5: the
-  // browser never decides the amount).
+  const metadata = asRecord(orderSnapshot.metadata);
+  let paystack = readStoredPaystackCheckout(
+    metadata.paystack_checkout,
+    paymentReference
+  );
+
+  if (!paystack) {
+    try {
+      paystack = await initializeTransaction({
+        email: String(orderSnapshot.customer_email_snapshot ?? ""),
+        amountMinor,
+        currency: chargeCurrency,
+        reference: paymentReference,
+        callbackUrl: new URL(`/account/orders/${orderId}`, request.url).toString(),
+        metadata: {
+          order_id: orderId,
+          display_currency: displayCurrency,
+        },
+      });
+    } catch (error) {
+      log.error("checkout.paystack_initialize_failed", {
+        reason: error instanceof PaystackApiError ? "provider" : "unexpected",
+        orderId,
+      });
+      return NextResponse.json(
+        { error: "Paystack is temporarily unavailable; please retry" },
+        { status: 502 }
+      );
+    }
+
+    // Persist the provider session for safe idempotent retries. Failure to
+    // persist does not discard a valid checkout response for this request;
+    // it is logged so operations can reconcile the pending order.
+    const admin = createAdminSupabaseClient();
+    const { error: metadataError } = await admin
+      .from("orders")
+      .update({
+        metadata: {
+          ...metadata,
+          paystack_checkout: {
+            authorization_url: paystack.authorizationUrl,
+            access_code: paystack.accessCode,
+            reference: paystack.reference,
+            initialized_at: new Date().toISOString(),
+          },
+        },
+      })
+      .eq("id", orderId);
+
+    if (metadataError) {
+      log.error("checkout.paystack_session_persist_failed", {
+        code: metadataError.code,
+        orderId,
+      });
+    }
+  }
+
+  // The browser receives only the provider access code/URL plus values already
+  // frozen on the order. It cannot propose or change the amount or currency.
   return NextResponse.json({
-    orderId: String(order.order_id),
-    paymentReference: String(order.payment_reference),
-    displayCurrency: String(order.display_currency),
-    chargeCurrency: String(order.charge_currency),
-    amountMinor: Number(order.total_charge_minor),
+    orderId,
+    paymentReference,
+    displayCurrency,
+    chargeCurrency,
+    amountMinor,
     reused: Boolean(order.reused),
-    publicKey,
+    accessCode: paystack.accessCode,
+    authorizationUrl: paystack.authorizationUrl,
   });
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+function readStoredPaystackCheckout(
+  value: unknown,
+  expectedReference: string
+): PaystackInitialization | null {
+  const stored = asRecord(value);
+  const authorizationUrl = stored.authorization_url;
+  const accessCode = stored.access_code;
+  const reference = stored.reference;
+
+  if (
+    typeof authorizationUrl !== "string" ||
+    typeof accessCode !== "string" ||
+    typeof reference !== "string" ||
+    reference !== expectedReference ||
+    accessCode.length < 6
+  ) {
+    return null;
+  }
+
+  try {
+    const parsed = new URL(authorizationUrl);
+    if (
+      parsed.protocol !== "https:" ||
+      !(
+        parsed.hostname === "checkout.paystack.com" ||
+        parsed.hostname.endsWith(".paystack.com")
+      )
+    ) {
+      return null;
+    }
+    return {
+      authorizationUrl: parsed.toString(),
+      accessCode,
+      reference,
+    };
+  } catch {
+    return null;
+  }
 }

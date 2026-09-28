@@ -45,7 +45,9 @@ export type CheckoutInitResponse = {
   displayCurrency: Currency;
   chargeCurrency: Currency;
   amountMinor: number;
-  publicKey: string;
+  accessCode: string;
+  authorizationUrl: string;
+  reused: boolean;
 };
 
 export type VerifyResponse = {

@@ -75,6 +75,7 @@ export function buildCspHeader(nonce: string): string {
     "'self'",
     ...supabaseConnectSources(),
     "https://api.paystack.co",
+    "https://checkout.paystack.com",
     ...(dev ? ["ws:", "wss:"] : []),
   ];
 
@@ -85,8 +86,14 @@ export function buildCspHeader(nonce: string): string {
     "img-src": ["'self'", "data:", "blob:", "https:"],
     "font-src": ["'self'", "data:"],
     "connect-src": connectSrc,
-    // Paystack inline checkout opens an iframe from *.paystack.co.
-    "frame-src": ["https://*.paystack.co"],
+    // InlineJS loads https://checkout.paystack.com/popup. The previous
+    // *.paystack.co-only rule blocked that .com iframe after setup(), leaving
+    // its overlay open forever with no callback/error event.
+    "frame-src": [
+      "https://checkout.paystack.com",
+      "https://*.paystack.com",
+      "https://*.paystack.co",
+    ],
     "worker-src": ["'self'", "blob:"],
     "object-src": ["'none'"],
     "base-uri": ["'self'"],
