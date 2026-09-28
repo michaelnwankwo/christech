@@ -40,8 +40,6 @@ export function newLineId(): string {
 export function AddToCartButton(props: {
   product: ProductSeed;
   addons?: Addon[];
-  /** Compact storefront-card presentation; the visible label stays stable. */
-  card?: boolean;
   /** When true, renders the inline add-on checkboxes (detail page). */
   withAddonPicker?: boolean;
 }) {
@@ -124,12 +122,11 @@ export function AddToCartButton(props: {
   }
 
   return (
-    // Detail CTAs stretch beneath the add-on picker. Card CTAs deliberately
-    // stay intrinsic-width so the footer can keep price-left/action-right.
-    <span
-      className={props.card ? "atc atc--card" : "stack atc"}
-      style={props.card ? undefined : { gap: ".45rem", width: "100%" }}
-    >
+    // .stack (flex column, children stretch) is what gives the grid button
+    // its full-width; it was dropped along with the floating modifier last
+    // round and collapsed the CTA to fit-content. Restore it for BOTH
+    // variants — the detail page used it anyway.
+    <span className="stack atc" style={{ gap: ".45rem", width: "100%" }}>
       {props.withAddonPicker && props.addons && props.addons.length > 0 ? (
         <fieldset className="addon-list" style={{ border: 0, margin: 0, padding: 0 }}>
           <legend className="muted" style={{ fontSize: ".8rem", fontWeight: 600 }}>
@@ -162,23 +159,17 @@ export function AddToCartButton(props: {
       <button
         type="button"
         className={
-          props.card
-            ? "btn btn--sm product-card__add"
-            : props.withAddonPicker
-              ? "btn btn--block atc__cta"
-              : "btn btn--sm"
+          props.withAddonPicker ? "btn btn--block atc__cta" : "btn btn--sm"
         }
         disabled={props.product.disabled || pending}
         onClick={() => startAdd(() => addToCart(1))}
         aria-busy={pending || undefined}
       >
-        {props.card
-          ? "Add to cart"
-          : props.product.disabled
-            ? "Out of stock"
-            : pending
-              ? <BrandLoader variant="inline" label="Adding…" />
-              : "Add to cart"}
+        {props.product.disabled
+          ? "Out of stock"
+          : pending
+            ? <BrandLoader variant="inline" label="Adding…" />
+            : "Add to cart"}
       </button>
     </span>
   );
