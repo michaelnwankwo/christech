@@ -75,6 +75,21 @@ export function formatServiceDuration(minutes: number | null): string {
   return m === 0 ? `≈ ${h} h on site` : `≈ ${h} h ${m} min on site`;
 }
 
+/**
+ * Compact card form of the estimated duration — "8h", "6h", "3h 30m",
+ * "45m" — for the service-card spec grid ("approx. 8h"). Returns null when
+ * the duration is unknown so the UI can fall back to "To be confirmed".
+ */
+export function formatCompactServiceDuration(
+  minutes: number | null
+): string | null {
+  if (!minutes || minutes <= 0) return null;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  if (h === 0) return `${m}m`;
+  return m === 0 ? `${h}h` : `${h}h ${m}m`;
+}
+
 /** POST /api/service-quote-requests success body. */
 export type ServiceQuoteRequestCreateResponse = {
   id: string;
