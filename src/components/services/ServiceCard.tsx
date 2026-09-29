@@ -1,11 +1,15 @@
 import Link from "next/link";
 import type { ServiceVM } from "@/types/catalog";
-import { formatMinorMoney } from "@/lib/currency/money";
-import { BookingCtaButton } from "./BookingCtaButton";
+import { formatServiceDuration } from "@/types/services";
+import { ServiceQuoteButton } from "./ServiceQuoteButton";
 
 // src/components/services/ServiceCard.tsx
 // §11.3: duration + scheduling requirements are shown; status is never
 // represented as payment status; there is no "add to cart" anywhere here.
+//
+// QUOTE-ON-DEMAND: baseline prices ("From ₦…") are GONE. Every card routes
+// through the WhatsApp quote modal — the only pricing model shown anywhere
+// is "Custom quote required", priced by staff after site review.
 
 export function ServiceCard({ service }: { service: ServiceVM }) {
   return (
@@ -21,25 +25,18 @@ export function ServiceCard({ service }: { service: ServiceVM }) {
       <div className="service-card__meta">
         <span className="chip">Scheduled service</span>
         {service.durationMinutes ? (
-          <span className="chip">~{formatDuration(service.durationMinutes)}</span>
+          <span className="chip">
+            {formatServiceDuration(service.durationMinutes)}
+          </span>
         ) : null}
         {service.requiresSchedule ? (
           <span className="chip chip--primary">Time window required</span>
         ) : null}
       </div>
       <div className="service-card__foot">
-        <strong className="mono">
-          From {formatMinorMoney(service.basePriceMinor, "NGN")}
-        </strong>
-        <BookingCtaButton slug={service.slug} />
+        <span className="chip">Custom quote required</span>
+        <ServiceQuoteButton service={service} className="btn btn--sm" />
       </div>
     </article>
   );
-}
-
-function formatDuration(minutes: number): string {
-  if (minutes < 60) return `${minutes} min`;
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  return m === 0 ? `${h} h` : `${h} h ${m} min`;
 }

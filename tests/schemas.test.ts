@@ -4,6 +4,7 @@ import {
   checkoutInitializeSchema,
   parseBody,
   quoteRequestSchema,
+  serviceQuoteRequestSchema,
   serviceRequestSchema,
 } from "@/lib/validation/schemas";
 
@@ -121,5 +122,75 @@ describe("serviceRequestSchema", () => {
       notes: "Please inspect the existing network cabinet.",
     });
     expect(ok.success).toBe(true);
+  });
+});
+
+describe("serviceQuoteRequestSchema", () => {
+  const futureDate = () => {
+    const d = new Date();
+    d.setDate(d.getDate() + 7);
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  };
+
+  const guestPayload = () => ({
+    serviceId: UUID,
+    customerName: "Ada Obi",
+    customerPhone: "+234 801 234 5678",
+    customerEmail: "ada@example.com",
+    siteAddress: "12 Adeola Odeku St, Victoria Island, Lagos",
+    preferredDate: futureDate(),
+    timeWindow: "Morning (08:00 – 11:00)",
+    siteNotes: "8 cameras, 2-storey building.",
+  });
+
+  it("accepts a guest quote payload with no auth fields", () => {
+    const ok = serviceQuoteRequestSchema.safeParse(guestPayload());
+    expect(ok.success).toBe(true);
+  });
+
+  it("rejects a past preferred inspection date", () => {
+    const bad = serviceQuoteRequestSchema.safeParse({
+      ...guestPayload(),
+      preferredDate: "2020-01-01",
+    });
+    expect(bad.success).toBe(false);
+  });
+
+  it("rejects impossible calendar dates", () => {
+    const bad = serviceQuoteRequestSchema.safeParse({
+      ...guestPayload(),
+      preferredDate: "2026-02-31",
+    });
+    expect(bad.success).toBe(false);
+  });
+
+  it("rejects an unknown time window", () => {
+    const bad = serviceQuoteRequestSchema.safeParse({
+      ...guestPayload(),
+      timeWindow: "Whenever o'clock",
+    });
+    expect(bad.success).toBe(false);
+  });
+
+  it("rejects a malformed phone number", () => {
+    const bad = serviceQuoteRequestSchema.safeParse({
+      ...guestPayload(),
+      customerPhone: "0801-CALL-NOW",
+    });
+    expect(bad.success).toBe(false);
+  });
+
+  it("carries no price field anywhere a client could set one", () => {
+    const greedy = serviceQuoteRequestSchema.safeParse({
+      ...guestPayload(),
+      quotedPriceMinor: 25_000_000,
+    });
+    // Passthrough of unknown keys is stripped by zod's default shaping; the
+    // parsed output must never echo a client-proposed amount back.
+    expect(greedy.success).toBe(true);
+    if (greedy.success) {
+      expect("quotedPriceMinor" in greedy.data).toBe(false);
+    }
   });
 });

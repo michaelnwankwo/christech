@@ -552,6 +552,7 @@ a:hover { text-decoration: underline; }
 }
 @media (prefers-reduced-motion: reduce) {
   .toast { animation: none; }
+  .qrm__dialog { animation: none; }
 }
 
 .pagination { display: flex; gap: .5rem; justify-content: center; align-items: center; padding: .5rem 0 1rem; }
@@ -936,6 +937,71 @@ a:hover { text-decoration: underline; }
   .dtm__day { min-height: 44px; }
   .dtm__slot, .dtm__ampm button { min-height: 40px; }
   .dtm__navbtn { width: 44px; height: 44px; }
+}
+
+/* ── Quote-on-Demand modal (WhatsApp service quotes) ─────────────────────
+   Guest-accessible: collects customer + site details, saves the Supabase
+   audit record, then dispatches to WhatsApp. Scrim click / Cancel / Escape
+   dismiss WITHOUT saving — same contract as the date/time picker above. */
+.qrm-scrim {
+  position: fixed; inset: 0; z-index: 87;
+  background: rgb(15 23 42 / .34);
+}
+.qrm {
+  position: fixed; inset: 0; z-index: 88;
+  display: grid; place-items: center; padding: 1rem;
+  pointer-events: none;                    /* only the dialog catches input */
+}
+.qrm__dialog {
+  pointer-events: auto;
+  width: min(560px, 100%); max-height: min(88dvh, 720px);
+  overflow: auto;
+  background: var(--color-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 1rem;
+  box-shadow: var(--shadow-card);
+  padding: 1.1rem;
+  display: flex; flex-direction: column; gap: .9rem;
+  animation: qrm-in .22s cubic-bezier(.32, .72, .35, 1);
+}
+@keyframes qrm-in { from { transform: translateY(14px); opacity: 0; } }
+.qrm__head { display: flex; align-items: flex-start; justify-content: space-between; gap: .6rem; }
+.qrm__title { margin: 0; font-size: 1.05rem; }
+.qrm__subtitle { margin: .15rem 0 0; font-size: .8rem; color: var(--text-muted); }
+.qrm__close {
+  border: 1px solid var(--border-subtle); background: var(--color-app-bg);
+  border-radius: .5rem; width: 32px; height: 32px; cursor: pointer; font-weight: 700;
+  flex: none;
+}
+.qrm__body { display: flex; flex-direction: column; gap: .8rem; }
+/* Read-only service context: the <fieldset> is disabled, chips only. */
+.qrm__service {
+  border: 1px dashed var(--border-subtle); border-radius: .6rem;
+  padding: .6rem .7rem; display: flex; flex-direction: column; gap: .45rem;
+}
+.qrm__service legend {
+  font-size: .72rem; font-weight: 700; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: .04em; padding: 0 .25rem;
+}
+.qrm__service-row { display: flex; flex-wrap: wrap; gap: .4rem; }
+.qrm__section {
+  margin: .2rem 0 0; font-size: .8rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .04em; color: var(--text-muted);
+}
+.qrm__actions { display: flex; justify-content: flex-end; align-items: center; gap: .6rem; }
+/* WhatsApp green CTA — the one deliberate off-palette accent in the file. */
+.qrm__whatsapp { background: #16a34a; border-color: #16a34a; color: #fff; }
+.qrm__whatsapp:link, .qrm__whatsapp:visited { color: #fff; }
+.qrm__whatsapp:hover:not(:disabled) { background: #15803d; border-color: #15803d; color: #fff; }
+.qrm__success { text-align: center; align-items: center; gap: .6rem; padding: .8rem .2rem; }
+.qrm__success-emoji { margin: 0; font-size: 2rem; }
+.qrm__success h3 { margin: 0; }
+.qrm__ref { font-weight: 700; color: var(--color-primary); }
+@media (max-width: 768px) {
+  .qrm__dialog { width: 100%; max-height: 90dvh; border-radius: 1rem 1rem 0 0; align-self: end; }
+  .qrm { place-items: end stretch; }        /* native-sheet placement */
+  .qrm__actions { flex-direction: column-reverse; align-items: stretch; }
+  .qrm__actions .btn { min-height: 44px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .dtm__dialog { animation: none; }

@@ -17,7 +17,6 @@ import { useBookingDraftStore, type BookingDraft } from "@/stores/booking-draft-
 import { useSession } from "@/components/providers/Providers";
 import { BookingSummary } from "./BookingSummary";
 import { DateTimePickerModal } from "./DateTimePickerModal";
-import { formatMinorMoney } from "@/lib/currency/money";
 import { BrandLoader } from "@/components/ui/BrandLoader";
 import type { SiteAddress } from "@/types/services";
 import type { ServiceVM } from "@/types/catalog";
@@ -313,7 +312,7 @@ function ServiceStep(props: {
                   {service.durationMinutes
                     ? `≈ ${service.durationMinutes} min on site · `
                     : ""}
-                  from {formatMinorMoney(service.basePriceMinor, "NGN")}
+                  custom quote on request
                 </span>
               </span>
             </span>

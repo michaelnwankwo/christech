@@ -5,6 +5,7 @@
 
 import { z } from "zod";
 import { CURRENCY_CODES } from "@/types/catalog";
+import { QUOTE_TIME_WINDOWS } from "@/types/services";
 import { normalizeShippingAddressInput } from "@/lib/shipping/zones";
 
 export const uuidSchema = z
@@ -93,6 +94,56 @@ export const serviceRequestSchema = z
         code: "custom",
         path: ["requestedStartAt"],
         message: "Bookings must be scheduled in the future",
+      });
+    }
+  });
+
+// Quote-on-Demand via WhatsApp — GUEST-accessible lead capture. Deliberately
+// separate from serviceRequestSchema: no auth requirement, contact fields
+// instead of a structured shipping address, and still zero price fields (the
+// client physically cannot propose an amount).
+export const serviceQuoteRequestSchema = z
+  .object({
+    serviceId: uuidSchema,
+    customerName: z.string().trim().min(2).max(120),
+    customerPhone: z
+      .string()
+      .trim()
+      .regex(
+        /^\+?[0-9][0-9\s\-().]{6,24}$/,
+        "Enter a valid phone number (e.g. +234 801 234 5678)"
+      ),
+    customerEmail: z.string().trim().email().max(160),
+    siteAddress: z.string().trim().min(5).max(400),
+    // Plain YYYY-MM-DD (the modal's <input type="date"> value); parsed to a
+    // real calendar date below so 2026-02-31 cannot pass as "valid".
+    preferredDate: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, "Use the date picker (YYYY-MM-DD)"),
+    timeWindow: z.enum(QUOTE_TIME_WINDOWS),
+    siteNotes: z.string().trim().max(4000).optional(),
+  })
+  .superRefine((value, ctx) => {
+    const parsed = new Date(`${value.preferredDate}T00:00:00`);
+    if (Number.isNaN(parsed.getTime())) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["preferredDate"],
+        message: "That date does not exist on the calendar",
+      });
+      return;
+    }
+    const today = new Date();
+    const todayMidnight = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate()
+    );
+    if (parsed.getTime() < todayMidnight.getTime()) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["preferredDate"],
+        message: "The preferred inspection date must be today or later",
       });
     }
   });

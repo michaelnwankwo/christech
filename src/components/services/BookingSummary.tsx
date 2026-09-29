@@ -4,7 +4,6 @@
 // shown on the review step. Pure rendering; no cart imports anywhere near it.
 
 import { useBookingDraftStore } from "@/stores/booking-draft-store";
-import { formatMinorMoney } from "@/lib/currency/money";
 import type { ServiceVM } from "@/types/catalog";
 
 export function BookingSummary({ service }: { service: ServiceVM | null }) {
@@ -17,12 +16,8 @@ export function BookingSummary({ service }: { service: ServiceVM | null }) {
       <dt>Service</dt>
       <dd>{service?.name ?? "—"}</dd>
 
-      <dt>Indicative price</dt>
-      <dd className="mono">
-        {service
-          ? `${formatMinorMoney(service.basePriceMinor, "NGN")} (final quote by staff)`
-          : "—"}
-      </dd>
+      <dt>Pricing</dt>
+      <dd>Custom quote required — quoted by staff after site review</dd>
 
       <dt>Time window</dt>
       <dd>

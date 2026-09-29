@@ -13,6 +13,7 @@ chrisviscustech`.
 | NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY | pk_live_… (the .env.local ones are dummies) | no | yes |
 | NEXT_PUBLIC_USE_DEMO_DATA | development-only demo switch; leave false in production | no | yes |
 | NEXT_PUBLIC_AUTH_GOOGLE_ENABLED | "true" only after Supabase Google provider is configured | no | yes |
+| NEXT_PUBLIC_WHATSAPP_BUSINESS_NUMBER | business line for the /services quote-on-demand flow (E.164, e.g. +2348012345678) — requires migration 0014 applied | no (public by design) | yes (bakes into bundle) |
 | USE_DEMO_DATA | development-only server demo switch; ignored in production | yes-ish, harmless either way | no |
 | SUPABASE_SERVICE_ROLE_KEY | only needed by server jobs — the web app never reads it | YES | no |
 | PAYSTACK_SECRET_KEY | sk_live_… | YES | no |
@@ -31,6 +32,7 @@ npx netlify env:set NEXT_PUBLIC_SUPABASE_ANON_KEY "<anon key>"
 npx netlify env:set NEXT_PUBLIC_APP_URL "https://chrisviscustech.netlify.app"
 npx netlify env:set NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY "pk_live_..."
 npx netlify env:set PAYSTACK_SECRET_KEY "sk_live_..."
+npx netlify env:set NEXT_PUBLIC_WHATSAPP_BUSINESS_NUMBER "+2348012345678"
 npx netlify env:list
 ```
 

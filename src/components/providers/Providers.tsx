@@ -21,7 +21,7 @@ import type { UsersRow } from "@/types/database";
 
 type SessionState = {
   user: User | null;
-  profile: Pick<UsersRow, "role" | "full_name" | "email"> | null;
+  profile: Pick<UsersRow, "role" | "full_name" | "email" | "phone"> | null;
   loading: boolean;
   demo: boolean;
   signOut: () => Promise<void>;
@@ -38,6 +38,7 @@ const DEMO_PROFILE: SessionState["profile"] = {
   role: "customer",
   full_name: "Demo Shopper",
   email: "demo-shopper@chrisviscus.test",
+  phone: "+234 801 234 5678",
 };
 
 const SessionContext = createContext<SessionState>({
@@ -115,7 +116,7 @@ export function Providers({
         // RLS users_read_own returns exactly this user's row.
         const { data } = await supabase
           .from("users")
-          .select("role, full_name, email")
+          .select("role, full_name, email, phone")
           .eq("id", currentUser.id)
           .maybeSingle();
         if (active) setProfile(data ?? null);

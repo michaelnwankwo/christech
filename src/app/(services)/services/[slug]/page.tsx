@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getBookingService } from "@/lib/catalog/queries";
-import { formatMinorMoney } from "@/lib/currency/money";
+import { formatServiceDuration } from "@/types/services";
+import { ServiceQuoteButton } from "@/components/services/ServiceQuoteButton";
 
 export const dynamic = "force-dynamic";
 
@@ -25,25 +26,24 @@ export default async function ServiceDetailPage({
       {service.description ? <p>{service.description}</p> : null}
 
       <div className="row" style={{ gap: ".5rem" }}>
-        <span className="chip">
-          Indicative from {formatMinorMoney(service.basePriceMinor, "NGN")}
-        </span>
+        <span className="chip chip--primary">Custom quote required</span>
         {service.durationMinutes ? (
-          <span className="chip">≈ {service.durationMinutes} minutes on site</span>
+          <span className="chip">
+            {formatServiceDuration(service.durationMinutes)}
+          </span>
         ) : null}
         {service.requiresSchedule ? (
-          <span className="chip chip--primary">Pick a requested window</span>
+          <span className="chip">Pick a requested window</span>
         ) : null}
       </div>
 
       <p className="muted" style={{ fontSize: ".85rem" }}>
-        Final pricing is quoted by staff after review. No payment is taken at
-        booking time.
+        Every site is different: pricing is quoted by staff after review —
+        no payment is taken at request time. Send your site details straight
+        to our WhatsApp line and an engineer replies with your custom quote.
       </p>
 
-      <Link className="btn" href={`/booking?service=${service.slug}`}>
-        Request this booking
-      </Link>
+      <ServiceQuoteButton service={service} />
     </article>
   );
 }
