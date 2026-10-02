@@ -7,6 +7,13 @@
 
 import type { ProductCard, ProductDetail, ServiceVM } from "@/types/catalog";
 import type { ProductFilters } from "@/lib/catalog/queries";
+import {
+  matchesSearchFields,
+  sanitizeSearchQuery,
+  SEARCH_MIN_CHARS,
+  SEARCH_RESULT_LIMIT,
+  type CatalogSearchResult,
+} from "@/lib/catalog/search";
 import { DEMO_PRODUCTS, DEMO_SERVICES } from "./data";
 
 export const DEMO_PAGE_SIZE = 50;
@@ -31,6 +38,16 @@ export function demoListProductCards(filters: ProductFilters): {
     rows = rows.filter((p) => p.unitPriceMinor >= filters.minNgnMinor!);
   if (typeof filters.maxNgnMinor === "number")
     rows = rows.filter((p) => p.unitPriceMinor <= filters.maxNgnMinor!);
+  if (filters.search) {
+    const token = sanitizeSearchQuery(filters.search);
+    if (token)
+      rows = rows.filter((p) =>
+        matchesSearchFields(
+          { name: p.name, sku: p.sku, brand: p.brand, category: p.category },
+          token
+        )
+      );
+  }
 
   const page = Math.max(1, filters.page ?? 1);
   const total = rows.length;
@@ -64,6 +81,36 @@ export function demoListProductCards(filters: ProductFilters): {
 
 export function demoCategories(): string[] {
   return [...new Set(DEMO_PRODUCTS.map((p) => p.category))].sort();
+}
+
+/**
+ * Live-search mirror for /api/search: same field semantics (name / sku /
+ * brand / category, case-insensitive contains) and the same result limit,
+ * sorted by name — the offline header dropdown behaves exactly like the
+ * Supabase-backed one.
+ */
+export function demoSearchProducts(
+  query: string,
+  limit: number = SEARCH_RESULT_LIMIT
+): CatalogSearchResult[] {
+  const token = sanitizeSearchQuery(query);
+  if (token.length < SEARCH_MIN_CHARS) return [];
+  return DEMO_PRODUCTS.filter((p) =>
+    matchesSearchFields(
+      { name: p.name, sku: p.sku, brand: p.brand, category: p.category },
+      token
+    )
+  )
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .slice(0, limit)
+    .map((p) => ({
+      slug: p.slug,
+      name: p.name,
+      brand: p.brand,
+      category: p.category,
+      sku: p.sku,
+      unitPriceMinor: p.unitPriceMinor,
+    }));
 }
 
 export function demoUsageTags(): string[] {

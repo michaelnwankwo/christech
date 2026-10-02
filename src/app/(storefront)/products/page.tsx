@@ -5,6 +5,7 @@ import { BrandLoader } from "@/components/ui/BrandLoader";
 import { FilterPill } from "@/components/products/FilterPill";
 import { listProductCards } from "@/lib/catalog/queries";
 import { parsePriceBound } from "@/lib/catalog/filters-query";
+import { sanitizeSearchQuery } from "@/lib/catalog/search";
 
 export const dynamic = "force-dynamic";
 
@@ -38,6 +39,8 @@ export default async function ProductsPage({
     minNgnMinor: parsePriceBound(sp.min),
     maxNgnMinor: parsePriceBound(sp.max),
     page: Math.max(1, Math.floor(Number(first(sp.page)) || 1)),
+    // Header search (?search=…) — sanitized before it reaches the query.
+    search: sanitizeSearchQuery(first(sp.search)) || undefined,
   };
 
   // Distinguish "query threw" (config/DB down — show an ops-facing banner)
@@ -58,6 +61,7 @@ export default async function ProductsPage({
     parsedFilters.brand.length +
     parsedFilters.usage.length +
     (parsedFilters.availableOnly ? 1 : 0) +
+    (parsedFilters.search ? 1 : 0) +
     (parsedFilters.minNgnMinor !== undefined ||
     parsedFilters.maxNgnMinor !== undefined
       ? 1
@@ -79,6 +83,27 @@ export default async function ProductsPage({
         </h1>
         <FilterPill activeCount={activeCount} />
       </div>
+
+      {/* Active header-search context: what matched, and a one-tap way back
+          to the unfiltered catalog (keeps every OTHER filter intact). */}
+      {parsedFilters.search ? (
+        <div className="search-active">
+          <span className="chip chip--primary">
+            Search: “{parsedFilters.search}”
+          </span>
+          <Link className="btn btn--ghost btn--sm" href={clearSearchHref(sp)}>
+            Clear search ✕
+          </Link>
+        </div>
+      ) : null}
+
+      {parsedFilters.search && result && result.totalCount === 0 ? (
+        <div className="banner banner--info" role="status">
+          No products match “{parsedFilters.search}”. Try a shorter term, a
+          brand (e.g. Hikvision), or a SKU fragment — or clear the search to
+          browse the full catalog.
+        </div>
+      ) : null}
 
       {/* Suspense keeps this boundary independent of the route-level
           loading.tsx: on streamed requests the branded skeleton grid paints
@@ -125,6 +150,17 @@ function buildHref(sp: Search, page: number): string {
     if (value && key !== "page") params.set(key, Array.isArray(value) ? value.join(",") : value);
   }
   if (page > 1) params.set("page", String(page));
+  const qs = params.toString();
+  return `/products${qs ? `?${qs}` : ""}`;
+}
+
+/** Same URL minus the search param — every other filter survives. */
+function clearSearchHref(sp: Search): string {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(sp)) {
+    if (value && key !== "search" && key !== "page")
+      params.set(key, Array.isArray(value) ? value.join(",") : value);
+  }
   const qs = params.toString();
   return `/products${qs ? `?${qs}` : ""}`;
 }

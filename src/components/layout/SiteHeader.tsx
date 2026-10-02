@@ -20,6 +20,7 @@ import { CurrencyPicker } from "./CurrencyPicker";
 import { CartTrigger } from "./CartTrigger";
 import { UserMenu } from "./UserMenu";
 import { MobileNav } from "./MobileNav";
+import { HeaderSearch, MobileSearch } from "./HeaderSearch";
 import type { AppMode } from "@/stores/cart-store";
 
 export function SiteHeader({ mode }: { mode: AppMode }) {
@@ -30,17 +31,22 @@ export function SiteHeader({ mode }: { mode: AppMode }) {
         <span className="site-header__modeswitch">
           <AppModeSwitch />
         </span>
+        {/* Desktop inline catalog search — sits between the mode pills and
+            the currency/account cluster; collapses away below 768px where
+            MobileSearch (inside .site-header__mobile-actions) takes over. */}
+        <HeaderSearch />
         <span className="site-header__spacer" />
         <div className="site-header__desktop">
           <CurrencyPicker />
           {mode === "storefront" ? <CartTrigger /> : null}
           <UserMenu />
         </div>
-        {mode === "storefront" ? (
-          <span className="site-header__mobile-actions">
-            <CartTrigger compact />
-          </span>
-        ) : null}
+        <span className="site-header__mobile-actions">
+          {/* Search toggle sits between the brand logo and the cart icon;
+              its full-width panel anchors to the sticky header (top:100%). */}
+          <MobileSearch />
+          {mode === "storefront" ? <CartTrigger compact /> : null}
+        </span>
         <MobileNav />
       </div>
     </header>

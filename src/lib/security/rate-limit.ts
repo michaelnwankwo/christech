@@ -29,6 +29,9 @@ export const RATE_LIMIT_RULES = {
   "checkout/initialize": { limit: 8, windowSeconds: 60 },
   "payments/verify": { limit: 12, windowSeconds: 60 },
   "service-requests": { limit: 6, windowSeconds: 300 },
+  // Header live-search dropdown — debounced (250ms) per keystroke, so the
+  // ceiling accommodates typing while still throttling scrape-style churn.
+  search: { limit: 60, windowSeconds: 60 },
   // Guest-accessible WhatsApp quote lead capture — anonymous callers key on
   // IP, so the ceiling stays low enough to stop lead-spamming the business
   // number while leaving genuine customers unlimited-in-practice.

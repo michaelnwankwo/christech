@@ -93,6 +93,132 @@ a:hover { text-decoration: underline; }
 /* Mobile top-bar cart (Option A): only the ≤768px cluster shows it. */
 .site-header__mobile-actions { display: none; align-items: center; gap: .4rem; }
 .site-header__mobile-actions .cart-badge-count { top: -4px; right: -4px; }
+
+/* ── Header catalog search (desktop inline input + mobile panel) ────────
+   Desktop: sleek #F3F4F6 pill with a slate magnifier, #9CA3AF placeholder,
+   ⌘K shortcut badge, brand-red focus ring, and a live-results popover.
+   Mobile: a 44px toggle in the top bar; the full-width panel slides/fades
+   open just below the sticky header (absolute — zero layout shift). */
+.hsearch {
+  position: relative;
+  display: flex; align-items: center;
+  flex: 0 1 270px; min-width: 190px; max-width: 340px;
+  background: #F3F4F6;
+  border: 1px solid transparent;
+  border-radius: .65rem;
+  transition: border-color .15s ease, box-shadow .15s ease, background-color .15s ease;
+}
+.hsearch:focus-within {
+  background: var(--color-surface);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 22%, transparent);
+}
+.hsearch__icon { display: inline-flex; flex: none; color: #6B7280; padding-left: .6rem; }
+.hsearch__input {
+  flex: 1 1 auto; min-width: 0;
+  background: transparent; border: 0; outline: none;
+  padding: .48rem .55rem;
+  font: inherit; font-size: .87rem; color: var(--color-text);
+}
+.hsearch__input::placeholder { color: #9CA3AF; }
+.hsearch__kbd {
+  flex: none; margin-right: .55rem;
+  font-size: .66rem; font-weight: 700; color: var(--text-muted);
+  background: var(--color-surface); border: 1px solid var(--border-subtle);
+  border-bottom-width: 2px; border-radius: .35rem; padding: .08rem .34rem;
+}
+/* Native webkit clear ✕ stays hidden — ESC + kbd badge own the desktop,
+   the dedicated X button owns the mobile panel. */
+.hsearch__input::-webkit-search-cancel-icon,
+.msearch__input::-webkit-search-cancel-icon { display: none; }
+.hsearch__pop {
+  position: absolute; top: calc(100% + .45rem); left: 0; right: 0;
+  min-width: 300px; z-index: 5;
+  background: var(--color-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: .7rem;
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+/* Shared live-suggestion list (desktop popover + mobile panel body). */
+.search-sug { display: flex; flex-direction: column; }
+.search-sug__opt {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center; column-gap: .6rem;
+  padding: .55rem .7rem; text-decoration: none;
+}
+.search-sug__opt:hover, .search-sug__opt.is-active { background: var(--color-app-bg); text-decoration: none; }
+.search-sug__name {
+  grid-column: 1; font-size: .86rem; font-weight: 600; color: var(--color-text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.search-sug__meta {
+  grid-column: 1; font-size: .72rem; color: var(--text-muted);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.search-sug__opt .product-card__price {
+  grid-column: 2; grid-row: 1 / span 2; font-size: .78rem;
+}
+.search-sug__foot { margin: 0; padding: .55rem .7rem; font-size: .78rem; color: var(--text-muted); }
+.search-sug__all {
+  padding: .55rem .7rem; font-size: .8rem; font-weight: 700;
+  border-top: 1px solid var(--border-subtle); background: var(--color-app-bg);
+}
+.search-sug__all:hover { text-decoration: none; color: var(--color-primary-hover); }
+
+/* Mobile: toggle icon matches the cart/burger stroke weight and slate tone;
+   the panel overlays content below the sticky header (no layout shift). */
+.msearch__toggle { color: #4A5568; }
+.msearch__toggle svg { display: block; }
+.msearch {
+  position: absolute; top: 100%; left: 0; right: 0; z-index: 6;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-card);
+  max-height: 0; opacity: 0; visibility: hidden; transform: translateY(-8px);
+  overflow: hidden;
+  transition: max-height .2s ease, opacity .2s ease, transform .2s ease,
+              visibility 0s linear .2s;
+}
+.msearch--open {
+  max-height: min(26rem, 70dvh); opacity: 1; visibility: visible; transform: none;
+  overflow: auto;
+  transition: max-height .2s ease, opacity .2s ease, transform .2s ease;
+}
+.msearch__bar { display: flex; align-items: center; gap: .5rem; padding: .6rem .75rem; }
+.msearch__field {
+  position: relative; flex: 1 1 auto; min-width: 0;
+  display: flex; align-items: center;
+  background: var(--color-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: .75rem;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+.msearch__field:focus-within {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 22%, transparent);
+}
+.msearch__icon { position: absolute; left: .65rem; display: inline-flex; color: #6B7280; pointer-events: none; }
+.msearch__input {
+  flex: 1 1 auto; min-width: 0;
+  background: transparent; border: 0; outline: none;
+  padding: .6rem .6rem .6rem 2.1rem;
+  font: inherit; font-size: 16px; /* stops iOS Safari focus zoom */
+  color: var(--color-text);
+}
+.msearch__input::placeholder { color: #9CA3AF; }
+.msearch__clear {
+  flex: none; width: 44px; height: 44px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: transparent; border: 0; border-radius: .5rem;
+  color: var(--text-muted); font-size: 1rem; cursor: pointer;
+}
+.msearch__clear:hover { color: var(--color-text); background: var(--color-app-bg); }
+.search-active { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
+@media (prefers-reduced-motion: reduce) {
+  .msearch { transition: none; }
+  .msearch--open { transition: none; }
+}
 /* The logo cluster is the ONLY shrinkable row member (flex 0 1 auto +
    min-width 0): its img already caps at max-width:100% + object-contain, so
    when a narrow laptop viewport runs out of room the mark letterboxes down
@@ -1247,6 +1373,8 @@ a:hover { text-decoration: underline; }
   .site-header__mobile-actions { display: flex; }
   .mobile-nav-host { display: block; }
   .site-header__inner { gap: .5rem; padding: 0 .75rem; }
+  /* Desktop inline search collapses away — MobileSearch owns ≤768px. */
+  .hsearch { display: none; }
   /* 1.6x calibration over the BASE visible mark (15.03px at the old 72px
      padded box → 24px here). The ≤380px width guard is gone: a 24px mark is
      ~159px wide and never crowds the 44px cart/burger cluster, not even at

@@ -23,6 +23,7 @@ import {
   demoUsageTags,
 } from "@/lib/demo/catalog";
 import type { ProductCard, ProductDetail, ServiceVM } from "@/types/catalog";
+import { sanitizeSearchQuery } from "@/lib/catalog/search";
 
 export type ProductFilters = {
   category?: string;
@@ -32,6 +33,8 @@ export type ProductFilters = {
   minNgnMinor?: number;
   maxNgnMinor?: number;
   page?: number;
+  /** Free-text catalog search (name / sku / brand / category), sanitized. */
+  search?: string;
 };
 
 // Keep the first storefront response large enough for the complete curated
@@ -71,6 +74,18 @@ export const listProductCards = cache(
           query = query.gte("unit_price_minor", filters.minNgnMinor);
         if (typeof filters.maxNgnMinor === "number")
           query = query.lte("unit_price_minor", filters.maxNgnMinor);
+        if (filters.search) {
+          // `search` arrives pre-sanitized by the caller (products page);
+          // sanitizeSearchQuery is re-run here so no path can skip it. The
+          // token contains none of PostgREST's or= grammar characters.
+          const token = sanitizeSearchQuery(filters.search);
+          if (token) {
+            const like = `%${token}%`;
+            query = query.or(
+              `name.ilike.${like},sku.ilike.${like},brand.ilike.${like},category.ilike.${like}`
+            );
+          }
+        }
 
         const { data, error, count } = await query;
         if (error) throw new Error("catalog_unavailable");
