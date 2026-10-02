@@ -95,37 +95,53 @@ a:hover { text-decoration: underline; }
 .site-header__mobile-actions .cart-badge-count { top: -4px; right: -4px; }
 
 /* ── Header catalog search (desktop inline input + mobile panel) ────────
-   Desktop: sleek #F3F4F6 pill with a slate magnifier, #9CA3AF placeholder,
-   ⌘K shortcut badge, brand-red focus ring, and a live-results popover.
+   Desktop: warm #F8F9FA pill, soft semi-transparent border that darkens on
+   hover, brand-red focus glow (the ring IS the focus indication — the
+   inner input's outline is suppressed), ⌘K badge, live-results popover.
    Mobile: a 44px toggle in the top bar; the full-width panel slides/fades
    open just below the sticky header (absolute — zero layout shift). */
 .hsearch {
   position: relative;
   display: flex; align-items: center;
   flex: 0 1 270px; min-width: 190px; max-width: 340px;
-  background: #F3F4F6;
-  border: 1px solid transparent;
+  background: #F8F9FA;                 /* warm, subtle — bg-slate-100/70 feel */
+  border: 1px solid rgba(0, 0, 0, 0.08); /* soft semi-transparent edge */
   border-radius: .65rem;
-  transition: border-color .15s ease, box-shadow .15s ease, background-color .15s ease;
+  transition: border-color .2s ease, box-shadow .2s ease,
+              background-color .2s ease;
 }
+/* Subtle border darken on hover (transition-all duration-200 equivalent,
+   limited to the animated properties). */
+.hsearch:hover { border-color: rgba(0, 0, 0, 0.18); }
+/* Focus: clean white surface + brand-red outer ring glow. Declared AFTER
+   :hover so a focused-then-hovered input keeps the red edge. */
 .hsearch:focus-within {
-  background: var(--color-surface);
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 22%, transparent);
+  background: #FFFFFF;
+  border-color: color-mix(in srgb, var(--color-primary) 35%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 15%, transparent);
 }
-.hsearch__icon { display: inline-flex; flex: none; color: #6B7280; padding-left: .6rem; }
+/* The container glow is the focus state — suppress the global focus-visible
+   outline on the inner input (scoped to the search inputs only). */
+.hsearch__input:focus,
+.hsearch__input:focus-visible { outline: none; }
+.hsearch__icon {
+  display: inline-flex; flex: none; color: #6B7280;
+  padding-left: .75rem;                /* pl-3 — 12px of balanced leading room */
+}
 .hsearch__input {
   flex: 1 1 auto; min-width: 0;
   background: transparent; border: 0; outline: none;
-  padding: .48rem .55rem;
+  padding: .48rem .55rem .48rem .5rem; /* crisp icon↔text separation */
   font: inherit; font-size: .87rem; color: var(--color-text);
 }
 .hsearch__input::placeholder { color: #9CA3AF; }
 .hsearch__kbd {
-  flex: none; margin-right: .55rem;
-  font-size: .66rem; font-weight: 700; color: var(--text-muted);
-  background: var(--color-surface); border: 1px solid var(--border-subtle);
-  border-bottom-width: 2px; border-radius: .35rem; padding: .08rem .34rem;
+  flex: none; margin-right: .5rem;
+  font-size: 10px; font-weight: 500; line-height: 1.2; color: #6B7280;
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;           /* border-gray-200 */
+  border-radius: .3rem;                /* rounded */
+  padding: .14rem .38rem;
 }
 /* Native webkit clear ✕ stays hidden — ESC + kbd badge own the desktop,
    the dedicated X button owns the mobile panel. */
@@ -168,10 +184,20 @@ a:hover { text-decoration: underline; }
 
 /* Mobile: toggle icon matches the cart/burger stroke weight and slate tone;
    the panel overlays content below the sticky header (no layout shift). */
-.msearch__toggle { color: #4A5568; }
+.msearch__toggle {
+  color: #4A5568;
+  transition: color .2s ease, border-color .2s ease;
+}
+/* Open state reads as an active control — brand-red edge on the toggle. */
+.msearch__toggle[aria-expanded="true"] {
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
 .msearch__toggle svg { display: block; }
 .msearch {
-  position: absolute; top: 100%; left: 0; right: 0; z-index: 6;
+  position: absolute; top: 100%; left: 0; right: 0;
+  z-index: 46; /* above the burger panel (45): search stays reachable even
+                  mid-menu; still below every modal (85+) */
   background: var(--color-surface);
   border-bottom: 1px solid var(--border-subtle);
   box-shadow: var(--shadow-card);
@@ -185,24 +211,34 @@ a:hover { text-decoration: underline; }
   overflow: auto;
   transition: max-height .2s ease, opacity .2s ease, transform .2s ease;
 }
-.msearch__bar { display: flex; align-items: center; gap: .5rem; padding: .6rem .75rem; }
+/* py-2.5 px-3.5 (10px 14px): the bar breathes between the top nav bar and
+   the hero banner below; the panel is absolute so nothing ever reflows. */
+.msearch__bar {
+  display: flex; align-items: center; gap: .5rem;
+  padding: .625rem .875rem;
+}
 .msearch__field {
   position: relative; flex: 1 1 auto; min-width: 0;
   display: flex; align-items: center;
   background: var(--color-surface);
-  border: 1px solid var(--border-subtle);
-  border-radius: .75rem;
-  transition: border-color .15s ease, box-shadow .15s ease;
+  border: 1px solid rgba(0, 0, 0, 0.08); /* soft edge — no harsh dark border */
+  border-radius: 999px;                  /* rounded-full pill */
+  transition: border-color .2s ease, box-shadow .2s ease;
 }
 .msearch__field:focus-within {
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 22%, transparent);
+  border-color: color-mix(in srgb, var(--color-primary) 35%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 15%, transparent);
 }
-.msearch__icon { position: absolute; left: .65rem; display: inline-flex; color: #6B7280; pointer-events: none; }
+.msearch__input:focus,
+.msearch__input:focus-visible { outline: none; }
+.msearch__icon {
+  position: absolute; left: .875rem;    /* lines up with the pill's 14px rhythm */
+  display: inline-flex; color: #6B7280; pointer-events: none;
+}
 .msearch__input {
   flex: 1 1 auto; min-width: 0;
   background: transparent; border: 0; outline: none;
-  padding: .6rem .6rem .6rem 2.1rem;
+  padding: .625rem 1rem .625rem 2.4rem; /* py-2.5 + clearance for the icon */
   font: inherit; font-size: 16px; /* stops iOS Safari focus zoom */
   color: var(--color-text);
 }
@@ -210,10 +246,16 @@ a:hover { text-decoration: underline; }
 .msearch__clear {
   flex: none; width: 44px; height: 44px;
   display: inline-flex; align-items: center; justify-content: center;
-  background: transparent; border: 0; border-radius: .5rem;
-  color: var(--text-muted); font-size: 1rem; cursor: pointer;
+  background: transparent; border: 0; border-radius: 999px;
+  color: #9CA3AF;                        /* low-contrast slate — quiet until used */
+  font-size: 1rem; cursor: pointer;
+  transition: color .15s ease, background-color .15s ease, transform .1s ease;
 }
-.msearch__clear:hover { color: var(--color-text); background: var(--color-app-bg); }
+.msearch__clear:hover { color: #4A5568; background: rgba(15, 23, 42, 0.06); }
+.msearch__clear:active { transform: scale(.92); }
+/* Open panel: give the suggestion list bottom breathing room so results
+   never sit flush against the panel's edge/hero below. */
+.msearch .search-sug { padding-bottom: .5rem; }
 .search-active { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
 @media (prefers-reduced-motion: reduce) {
   .msearch { transition: none; }
